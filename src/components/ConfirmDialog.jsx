@@ -1,5 +1,7 @@
+import { createPortal } from 'react-dom';
+
 export default function ConfirmDialog({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, onConfirm, onCancel }) {
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onCancel}>
       <div
         className="modal-content"
@@ -45,6 +47,7 @@ export default function ConfirmDialog({ title, message, confirmText = 'Confirm',
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

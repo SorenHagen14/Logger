@@ -1,4 +1,5 @@
 import { useState, useContext, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AppContext } from '../App.jsx';
 import { getTemplates, getWorkouts, saveTemplate, deleteTemplate } from '../data/db.js';
 import { generateId, formatRelativeTime, formatDate } from '../utils/helpers.js';
@@ -57,13 +58,6 @@ export default function HomeScreen() {
             Logger
           </span>
         </h1>
-        <p style={{
-          fontSize: 14,
-          color: 'var(--text-secondary)',
-          lineHeight: 1.5,
-        }}>
-          Track volume, optimize recovery, and push your limits.
-        </p>
       </div>
 
       {/* Sessions Stat */}
@@ -315,7 +309,7 @@ export default function HomeScreen() {
         />
       )}
 
-      {menuTemplate && (
+      {menuTemplate && createPortal(
         <div className="modal-overlay" onClick={() => setMenuTemplate(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{
@@ -381,10 +375,11 @@ export default function HomeScreen() {
               <span style={{ fontSize: 16 }}>&#x2715;</span> Delete
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {renameTemplate && (
+      {renameTemplate && createPortal(
         <div className="modal-overlay" onClick={() => setRenameTemplate(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: 24 }}>
             <h3 style={{
@@ -437,7 +432,8 @@ export default function HomeScreen() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {deleteConfirm && (

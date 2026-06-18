@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { getExercises, saveCustomExercise, deleteCustomExercise } from '../data/db.js';
 import { MUSCLE_GROUPS } from '../data/exercises.js';
 import { generateId } from '../utils/helpers.js';
@@ -210,7 +211,7 @@ export default function ExercisesScreen() {
       </div>
 
       {/* Create / Edit Modal */}
-      {showCreate && (
+      {showCreate && createPortal(
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h3 style={{
@@ -265,7 +266,8 @@ export default function ExercisesScreen() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {deleteTarget && (
