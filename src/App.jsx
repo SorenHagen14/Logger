@@ -1,4 +1,4 @@
-import { useState, useCallback, createContext } from 'react';
+import { useState, useCallback, createContext, useEffect } from 'react';
 import { generateId } from './utils/helpers.js';
 import {
   getSettings,
@@ -11,6 +11,8 @@ import {
   clearActiveWorkout,
   getPreviousDataForExercise,
 } from './data/db.js';
+import { supabase } from './data/supabase.js';
+import { setSyncUser, uploadToCloud, downloadFromCloud } from './data/sync.js';
 import BottomNav from './components/BottomNav.jsx';
 import PullToRefresh from './components/PullToRefresh.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
@@ -30,6 +32,32 @@ export default function App() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [viewingWorkout, setViewingWorkout] = useState(null);
   const [, forceUpdate] = useState(0);
+  const [user, setUser] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      setSyncUser(u?.id ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      setSyncUser(u?.id ?? null);
+
+      if (u) {
+        setSyncing(true);
+        const hadCloudData = await downloadFromCloud();
+        if (!hadCloudData) await uploadToCloud(u.id);
+        setSyncing(false);
+        forceUpdate(n => n + 1);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const startWorkout = useCallback((template) => {
     const settings = getSettings();
@@ -118,6 +146,8 @@ export default function App() {
     viewingWorkout,
     setViewingWorkout,
     forceUpdate: () => forceUpdate(n => n + 1),
+    user,
+    syncing,
   };
 
   // 1. Completed workout summary (no nav)

@@ -2,11 +2,17 @@ import { useState, useEffect, useContext } from 'react';
 import { getSettings, saveSettings, getTemplates, getExercises } from '../data/db.js';
 import { AppContext } from '../App.jsx';
 import StrongImport from '../components/StrongImport.jsx';
+import AuthModal from '../components/AuthModal.jsx';
+import { supabase } from '../data/supabase.js';
+import { uploadToCloud } from '../data/sync.js';
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState(getSettings());
   const [showStrongImport, setShowStrongImport] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('');
   const ctx = useContext(AppContext);
+  const { user, syncing } = ctx;
 
   useEffect(() => {
     saveSettings(settings);
@@ -27,9 +33,111 @@ export default function SettingsScreen() {
         Settings
       </h1>
 
-      {/* Rest Timer */}
+      {/* Account / Sync */}
       <div style={{
         borderTop: '1px solid var(--border)',
+        borderBottom: '1px solid var(--border)',
+        padding: '20px 0',
+        marginBottom: 24,
+      }}>
+        <div className="label" style={{ marginBottom: 14 }}>Account</div>
+        {user ? (
+          <div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 12,
+            }}>
+              <div style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: syncing ? 'var(--yellow)' : 'var(--green)',
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.email}
+              </span>
+            </div>
+            {syncStatus ? (
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                {syncStatus}
+              </p>
+            ) : null}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={async () => {
+                  setSyncStatus('Syncing…');
+                  const ok = await uploadToCloud(user.id);
+                  setSyncStatus(ok ? 'Synced ✓' : 'Sync failed');
+                  setTimeout(() => setSyncStatus(''), 3000);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                  textAlign: 'center',
+                }}
+              >
+                Sync Now
+              </button>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  ctx.forceUpdate();
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  textAlign: 'center',
+                }}
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5 }}>
+              Sign in to sync your workouts and templates across all your devices.
+            </p>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              style={{
+                width: '100%',
+                padding: '14px',
+                fontSize: 13,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                background: 'var(--accent)',
+                color: 'var(--accent-text)',
+                border: 'none',
+                textAlign: 'center',
+              }}
+            >
+              Sign In
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Rest Timer */}
+      <div style={{
         borderBottom: '1px solid var(--border)',
         padding: '20px 0',
         marginBottom: 24,
@@ -286,6 +394,10 @@ export default function SettingsScreen() {
           onClose={() => setShowStrongImport(false)}
           onImported={() => ctx.forceUpdate()}
         />
+      )}
+
+      {showAuthModal && (
+        <AuthModal onClose={() => { setShowAuthModal(false); ctx.forceUpdate(); }} />
       )}
     </div>
   );

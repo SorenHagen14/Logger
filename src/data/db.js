@@ -1,4 +1,5 @@
 import builtInExercises from './exercises.js';
+import { syncAfterWrite } from './sync.js';
 
 const KEYS = {
   exercises: 'wl_exercises',
@@ -37,11 +38,13 @@ export function saveCustomExercise(exercise) {
   if (idx >= 0) custom[idx] = exercise;
   else custom.push(exercise);
   write(KEYS.exercises, custom);
+  syncAfterWrite();
 }
 
 export function deleteCustomExercise(id) {
   const custom = getCustomExercises().filter(e => e.id !== id);
   write(KEYS.exercises, custom);
+  syncAfterWrite();
 }
 
 // Templates
@@ -55,11 +58,13 @@ export function saveTemplate(template) {
   if (idx >= 0) templates[idx] = template;
   else templates.push(template);
   write(KEYS.templates, templates);
+  syncAfterWrite();
 }
 
 export function deleteTemplate(id) {
   const templates = getTemplates().filter(t => t.id !== id);
   write(KEYS.templates, templates);
+  syncAfterWrite();
 }
 
 // Workouts
@@ -71,6 +76,7 @@ export function saveWorkout(workout) {
   const workouts = getWorkouts();
   workouts.push(workout);
   write(KEYS.workouts, workouts);
+  syncAfterWrite();
 }
 
 export function getLastWorkoutForTemplate(templateId) {
@@ -115,6 +121,7 @@ export function getSettings() {
 
 export function saveSettings(settings) {
   write(KEYS.settings, settings);
+  syncAfterWrite();
 }
 
 // Active workout (persist across refreshes)
