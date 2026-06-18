@@ -12,6 +12,7 @@ import {
   getPreviousDataForExercise,
 } from './data/db.js';
 import BottomNav from './components/BottomNav.jsx';
+import PullToRefresh from './components/PullToRefresh.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
 import ExercisesScreen from './screens/ExercisesScreen.jsx';
 import SettingsScreen from './screens/SettingsScreen.jsx';
@@ -123,10 +124,12 @@ export default function App() {
   if (completedWorkout) {
     return (
       <AppContext.Provider value={ctx}>
-        <WorkoutSummary
-          workout={completedWorkout}
-          onDone={() => { setCompletedWorkout(null); setScreen('home'); }}
-        />
+        <PullToRefresh>
+          <WorkoutSummary
+            workout={completedWorkout}
+            onDone={() => { setCompletedWorkout(null); setScreen('home'); }}
+          />
+        </PullToRefresh>
       </AppContext.Provider>
     );
   }
@@ -135,7 +138,9 @@ export default function App() {
   if (activeWorkout) {
     return (
       <AppContext.Provider value={ctx}>
-        <ActiveWorkout />
+        <PullToRefresh>
+          <ActiveWorkout />
+        </PullToRefresh>
       </AppContext.Provider>
     );
   }
@@ -144,20 +149,22 @@ export default function App() {
   if (editingTemplate) {
     return (
       <AppContext.Provider value={ctx}>
-        <TemplateEditor
-          template={editingTemplate}
-          onSave={(t) => {
-            saveTemplate(t);
-            setEditingTemplate(null);
-            forceUpdate(n => n + 1);
-          }}
-          onDelete={(id) => {
-            deleteTemplate(id);
-            setEditingTemplate(null);
-            forceUpdate(n => n + 1);
-          }}
-          onCancel={() => setEditingTemplate(null)}
-        />
+        <PullToRefresh>
+          <TemplateEditor
+            template={editingTemplate}
+            onSave={(t) => {
+              saveTemplate(t);
+              setEditingTemplate(null);
+              forceUpdate(n => n + 1);
+            }}
+            onDelete={(id) => {
+              deleteTemplate(id);
+              setEditingTemplate(null);
+              forceUpdate(n => n + 1);
+            }}
+            onCancel={() => setEditingTemplate(null)}
+          />
+        </PullToRefresh>
       </AppContext.Provider>
     );
   }
@@ -166,10 +173,12 @@ export default function App() {
   if (viewingWorkout) {
     return (
       <AppContext.Provider value={ctx}>
-        <WorkoutDetail
-          workout={viewingWorkout}
-          onBack={() => setViewingWorkout(null)}
-        />
+        <PullToRefresh>
+          <WorkoutDetail
+            workout={viewingWorkout}
+            onBack={() => setViewingWorkout(null)}
+          />
+        </PullToRefresh>
       </AppContext.Provider>
     );
   }
@@ -177,10 +186,12 @@ export default function App() {
   // 5. Normal screens + BottomNav
   return (
     <AppContext.Provider value={ctx}>
-      {screen === 'home' && <HomeScreen />}
-      {screen === 'exercises' && <ExercisesScreen />}
-      {screen === 'settings' && <SettingsScreen />}
-      <BottomNav />
+      <PullToRefresh>
+        {screen === 'home' && <HomeScreen />}
+        {screen === 'exercises' && <ExercisesScreen />}
+        {screen === 'settings' && <SettingsScreen />}
+        <BottomNav />
+      </PullToRefresh>
     </AppContext.Provider>
   );
 }
