@@ -2,20 +2,16 @@
   "name": "Workout Logger",
   "short_name": "Workout",
   "description": "Track your workouts",
-  "start_url": "/",
+  "start_url": "/Logger/",
+  "scope": "/Logger/",
   "display": "standalone",
   "background_color": "#0D0D0F",
   "theme_color": "#0D0D0F",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/Logger/icons.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ]
 }
