@@ -1,28 +1,14 @@
-import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../data/supabase.js';
 
 export default function AuthModal({ onClose }) {
-  const [sent, setSent] = useState(false);
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  async function sendLink(e) {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setLoading(true);
-    setError('');
-    const { error: err } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
+  async function signInWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
       options: {
-        shouldCreateUser: true,
-        emailRedirectTo: window.location.origin + window.location.pathname,
+        redirectTo: window.location.origin + window.location.pathname,
       },
     });
-    setLoading(false);
-    if (err) { setError(err.message); return; }
-    setSent(true);
   }
 
   return createPortal(
@@ -39,74 +25,31 @@ export default function AuthModal({ onClose }) {
           letterSpacing: '0.06em',
           marginBottom: 6,
         }}>
-          {sent ? 'Check Your Email' : 'Sign In'}
+          Sign In
         </h3>
-
-        {!sent ? (
-          <>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
-              Enter your email and we'll send a sign-in link. Your workouts sync automatically once signed in.
-            </p>
-            <form onSubmit={sendLink}>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: 52,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  padding: '0 16px',
-                  fontSize: 16,
-                  color: 'var(--text)',
-                }}
-                autoFocus
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-              {error && (
-                <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>{error}</p>
-              )}
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading || !email.trim()}
-                style={{ width: '100%', marginTop: 16, opacity: loading ? 0.6 : 1 }}
-              >
-                {loading ? 'Sending…' : 'Send Sign-in Link'}
-              </button>
-            </form>
-          </>
-        ) : (
-          <>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
-              A sign-in link was sent to{' '}
-              <strong style={{ color: 'var(--text)' }}>{email}</strong>.
-              Tap it and you'll be signed in automatically.
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
-              The link opens this app in your browser. Come back here after tapping it — your data will sync automatically.
-            </p>
-            <button
-              onClick={() => { setSent(false); setEmail(''); }}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              Use a different email
-            </button>
-          </>
-        )}
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
+          Sign in with Google to sync your workouts across devices. No password needed.
+        </p>
+        <button
+          onClick={signInWithGoogle}
+          style={{
+            width: '100%',
+            height: 52,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            background: '#fff',
+            color: '#1a1a1a',
+            border: 'none',
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          <GoogleIcon />
+          Sign in with Google
+        </button>
 
         <button
           onClick={onClose}
@@ -129,5 +72,16 @@ export default function AuthModal({ onClose }) {
       </div>
     </div>,
     document.body
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48">
+      <path fill="#FFC107" d="M43.6 20.5H24v7.5h11.1C33.6 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.4 1 7.3 2.7l5.7-5.7C33.8 7.5 29.1 5.5 24 5.5 13.8 5.5 5.5 13.8 5.5 24S13.8 42.5 24 42.5c10.5 0 18-7.4 18-18 0-1.2-.1-2.4-.4-3.5z"/>
+      <path fill="#FF3D00" d="M7 14.7l6.6 4.8C15.3 16 19.4 13.5 24 13.5c2.8 0 5.4 1 7.3 2.7l5.7-5.7C33.8 7.5 29.1 5.5 24 5.5c-7.3 0-13.6 4-17 10.2z"/>
+      <path fill="#4CAF50" d="M24 42.5c5 0 9.7-1.9 13.2-5.1l-6.1-5.1C29.3 34 26.7 35 24 35c-5.3 0-9.6-2.6-11.1-7H6.7c3.4 6.3 9.8 10.5 17.3 10.5z"/>
+      <path fill="#1976D2" d="M43.6 20.5H24v7.5h11.1c-.8 2.1-2.2 3.9-4.1 5.2l6.1 5.1c3.6-3.4 5.9-8.4 5.9-14.3 0-1.2-.1-2.4-.4-3.5z"/>
+    </svg>
   );
 }
