@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { getSettings, saveSettings } from '../data/db.js';
+import { getSettings, saveSettings, getTemplates, getExercises } from '../data/db.js';
 import { AppContext } from '../App.jsx';
 import StrongImport from '../components/StrongImport.jsx';
 
@@ -141,6 +141,60 @@ export default function SettingsScreen() {
       {/* Data Management */}
       <div style={{ marginBottom: 24 }}>
         <div className="label" style={{ marginBottom: 14 }}>Data</div>
+        <button
+          onClick={async () => {
+            const templates = getTemplates();
+            const allExercises = getExercises();
+            const getName = (id) => allExercises.find(e => e.id === id)?.name || 'Unknown';
+
+            const rows = [['Template', 'Exercise', 'Set Number', 'Set Type']];
+            for (const t of templates) {
+              for (const ex of (t.exercises || [])) {
+                const sets = ex.sets || Array.from({ length: ex.defaultSets || 3 }, () => ({ setType: 'normal' }));
+                sets.forEach((s, i) => {
+                  rows.push([
+                    `"${t.name.replace(/"/g, '""')}"`,
+                    `"${getName(ex.exerciseId).replace(/"/g, '""')}"`,
+                    String(i + 1),
+                    s.setType || 'normal',
+                  ]);
+                });
+              }
+            }
+
+            const csv = rows.map(r => r.join(',')).join('\n');
+            const filename = `workout-templates-${new Date().toISOString().split('T')[0]}.csv`;
+            const file = new File([csv], filename, { type: 'text/csv' });
+
+            if (navigator.canShare?.({ files: [file] })) {
+              try {
+                await navigator.share({ files: [file], title: 'Workout Templates' });
+              } catch { /* user cancelled share */ }
+            } else {
+              const url = URL.createObjectURL(file);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = filename;
+              a.click();
+              URL.revokeObjectURL(url);
+            }
+          }}
+          style={{
+            width: '100%',
+            padding: '14px',
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            background: 'transparent',
+            color: 'var(--text)',
+            border: '1px solid var(--border)',
+            marginBottom: 8,
+            textAlign: 'center',
+          }}
+        >
+          Export Templates CSV
+        </button>
         <button
           onClick={() => {
             const data = {

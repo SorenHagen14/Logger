@@ -53,9 +53,8 @@ export default function HomeScreen() {
           lineHeight: 1.05,
           marginBottom: 8,
         }}>
-          Log an{' '}
           <span className="serif-italic" style={{ color: 'var(--accent)' }}>
-            elite session
+            Logger
           </span>
         </h1>
         <p style={{
