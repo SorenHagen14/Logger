@@ -1,11 +1,13 @@
 import { useState, useCallback, createContext, useEffect } from 'react';
 import { generateId } from './utils/helpers.js';
+import { decodeShareUrl, decodeTemplateUrl, decodeAllTemplatesUrl } from './utils/share.js';
 import {
   getSettings,
   getTemplates,
   saveTemplate,
   deleteTemplate,
   saveWorkout,
+  getWorkouts,
   getActiveWorkout,
   saveActiveWorkout,
   clearActiveWorkout,
@@ -16,6 +18,7 @@ import { supabase } from './data/supabase.js';
 import { setSyncUser, uploadToCloud, downloadFromCloud } from './data/sync.js';
 import BottomNav from './components/BottomNav.jsx';
 import PullToRefresh from './components/PullToRefresh.jsx';
+import SignInBanner from './components/SignInBanner.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
 import ExercisesScreen from './screens/ExercisesScreen.jsx';
 import SettingsScreen from './screens/SettingsScreen.jsx';
@@ -35,6 +38,7 @@ export default function App() {
   const [, forceUpdate] = useState(0);
   const [user, setUser] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,6 +62,63 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const sharedWorkout = decodeShareUrl(hash);
+    if (sharedWorkout) {
+      window.history.replaceState(null, '', window.location.pathname);
+      const existing = getWorkouts();
+      const alreadyImported = existing.some(
+        w => w.templateName === sharedWorkout.templateName
+          && w.completedAt === sharedWorkout.completedAt
+          && w.shared
+      );
+      if (!alreadyImported) {
+        saveWorkout(sharedWorkout);
+      }
+      setViewingWorkout(sharedWorkout);
+      return;
+    }
+
+    const sharedTemplate = decodeTemplateUrl(hash);
+    if (sharedTemplate) {
+      window.history.replaceState(null, '', window.location.pathname);
+      const existing = getTemplates();
+      const alreadyImported = existing.some(
+        t => t.name === sharedTemplate.name && t.shared
+      );
+      if (!alreadyImported) {
+        saveTemplate(sharedTemplate);
+      }
+      setEditingTemplate(alreadyImported
+        ? existing.find(t => t.name === sharedTemplate.name && t.shared)
+        : sharedTemplate
+      );
+      forceUpdate(n => n + 1);
+      return;
+    }
+
+    const sharedTemplates = decodeAllTemplatesUrl(hash);
+    if (sharedTemplates && sharedTemplates.length > 0) {
+      window.history.replaceState(null, '', window.location.pathname);
+      const existing = getTemplates();
+      let importedCount = 0;
+      for (const tmpl of sharedTemplates) {
+        const alreadyExists = existing.some(
+          t => t.name === tmpl.name && t.shared
+        );
+        if (!alreadyExists) {
+          saveTemplate(tmpl);
+          importedCount++;
+        }
+      }
+      setScreen('home');
+      forceUpdate(n => n + 1);
+    }
   }, []);
 
   const startWorkout = useCallback((template) => {
@@ -224,6 +285,9 @@ export default function App() {
   return (
     <AppContext.Provider value={ctx}>
       <PullToRefresh>
+        {!user && !bannerDismissed && (
+          <SignInBanner onDismiss={() => setBannerDismissed(true)} />
+        )}
         {screen === 'home' && <HomeScreen />}
         {screen === 'exercises' && <ExercisesScreen />}
         {screen === 'settings' && <SettingsScreen />}

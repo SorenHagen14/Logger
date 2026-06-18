@@ -1,9 +1,10 @@
 import { getExercises } from '../data/db.js';
 import { formatDate, formatDuration } from '../utils/helpers.js';
+import { shareWorkout } from '../utils/share.js';
 
 export default function WorkoutDetail({ workout, onBack }) {
   const allExercises = getExercises();
-  const getExName = (id) => allExercises.find(e => e.id === id)?.name || id;
+  const getExName = (id, name) => name || allExercises.find(e => e.id === id)?.name || id;
 
   const totalCompletedSets = workout.exercises.reduce(
     (sum, ex) => sum + ex.sets.filter(s => s.completed).length, 0
@@ -14,7 +15,7 @@ export default function WorkoutDetail({ workout, onBack }) {
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 12,
+        justifyContent: 'space-between',
         marginBottom: 24,
       }}>
         <button onClick={onBack} style={{
@@ -24,6 +25,16 @@ export default function WorkoutDetail({ workout, onBack }) {
           lineHeight: 1,
         }}>
           &#x2190;
+        </button>
+        <button onClick={() => shareWorkout(workout)} style={{
+          color: 'var(--text-muted)',
+          fontSize: 13,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          padding: '8px 12px',
+        }}>
+          Share
         </button>
       </div>
 
@@ -39,6 +50,18 @@ export default function WorkoutDetail({ workout, onBack }) {
       </h2>
 
       <div style={{ marginBottom: 24 }}>
+        {workout.shared && (
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--accent)',
+            marginBottom: 6,
+          }}>
+            Shared with you
+          </div>
+        )}
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 2 }}>
           {formatDate(workout.completedAt)}
         </div>
@@ -65,7 +88,7 @@ export default function WorkoutDetail({ workout, onBack }) {
                 letterSpacing: '0.04em',
                 marginBottom: 10,
               }}>
-                {getExName(ex.exerciseId)}
+                {getExName(ex.exerciseId, ex.exerciseName)}
               </div>
 
               {/* Notes */}

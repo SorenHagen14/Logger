@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { AppContext } from '../App.jsx';
 import { getTemplates, getWorkouts, getExercises, saveTemplate, deleteTemplate } from '../data/db.js';
 import { generateId, formatRelativeTime, formatDate } from '../utils/helpers.js';
+import { shareTemplate, shareAllTemplates } from '../utils/share.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 export default function HomeScreen() {
@@ -103,22 +104,41 @@ export default function HomeScreen() {
           marginBottom: 16,
         }}>
           <span className="label">Templates</span>
-          <button
-            onClick={() => setEditingTemplate({ id: generateId(), name: '', exercises: [], supersets: [] })}
-            style={{
-              width: 32,
-              height: 32,
-              background: 'var(--accent)',
-              color: 'var(--accent-text)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 20,
-              fontWeight: 400,
-            }}
-          >
-            +
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {templates.length > 0 && (
+              <button
+                onClick={() => shareAllTemplates(templates)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted)',
+                  fontSize: 18,
+                  lineHeight: 1,
+                }}
+              >
+                &#x22EE;
+              </button>
+            )}
+            <button
+              onClick={() => setEditingTemplate({ id: generateId(), name: '', exercises: [], supersets: [] })}
+              style={{
+                width: 32,
+                height: 32,
+                background: 'var(--accent)',
+                color: 'var(--accent-text)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 20,
+                fontWeight: 400,
+              }}
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {templates.length === 0 ? (
@@ -361,8 +381,12 @@ export default function HomeScreen() {
               <span style={{ fontSize: 16 }}>Aa</span> Rename
             </button>
             <button
-              onClick={() => setMenuTemplate(null)}
-              style={{ ...MENU_ITEM_STYLE, color: 'var(--text-muted)' }}
+              onClick={() => {
+                const t = menuTemplate;
+                setMenuTemplate(null);
+                shareTemplate(t);
+              }}
+              style={MENU_ITEM_STYLE}
             >
               <span style={{ fontSize: 16 }}>&#x2197;</span> Share
             </button>
