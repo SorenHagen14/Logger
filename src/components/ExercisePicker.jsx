@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { getExercises } from '../data/db.js';
 import { MUSCLE_GROUPS } from '../data/exercises.js';
 import MuscleMap from './MuscleMap.jsx';
@@ -32,7 +33,7 @@ export default function ExercisePicker({ onSelect, onClose, excludeIds = [] }) {
     return groups;
   }, [filtered]);
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{
@@ -200,6 +201,7 @@ export default function ExercisePicker({ onSelect, onClose, excludeIds = [] }) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

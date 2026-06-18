@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { getExercises } from '../data/db.js';
 import ExercisePicker from '../components/ExercisePicker.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
@@ -366,7 +367,7 @@ const MENU_ITEM_STYLE = {
 };
 
 function TemplateExerciseMenu({ exercise, exerciseIdx, exerciseCount, getExName, onClose, onRemove, onReplace, onMoveUp, onMoveDown }) {
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{
@@ -410,7 +411,8 @@ function TemplateExerciseMenu({ exercise, exerciseIdx, exerciseCount, getExName,
           <span style={{ fontSize: 16 }}>&#x2715;</span> Remove
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -495,7 +497,11 @@ function TemplateSetRow({ set, setIdx, onUpdateType, onDelete, canDelete }) {
             onClick={(e) => {
               e.stopPropagation();
               const rect = e.currentTarget.getBoundingClientRect();
-              setTypeMenuPos({ top: rect.top, left: rect.right + 4 });
+              const menuWidth = 130;
+              const menuHeight = 176;
+              const left = Math.min(rect.right + 4, window.innerWidth - menuWidth - 8);
+              const top = Math.min(rect.top, window.innerHeight - menuHeight - 8);
+              setTypeMenuPos({ top, left });
               setShowTypeMenu(!showTypeMenu);
             }}
             style={{

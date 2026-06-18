@@ -3,7 +3,7 @@ export function generateId() {
 }
 
 export function formatRelativeTime(dateString) {
-  if (!dateString) return 'Never completed';
+  if (!dateString) return 'Never';
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now - date;
@@ -11,10 +11,7 @@ export function formatRelativeTime(dateString) {
 
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return '1 day ago';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  const diffWeeks = Math.floor(diffDays / 7);
-  if (diffWeeks === 1) return '1 week ago';
-  if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
+  if (diffDays <= 30) return `${diffDays} days ago`;
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths === 1) return '1 month ago';
   if (diffMonths < 12) return `${diffMonths} months ago`;

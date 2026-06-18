@@ -1,4 +1,5 @@
 import { useState, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { AppContext } from '../App.jsx';
 import { getExercises } from '../data/db.js';
 import ExercisePicker from './ExercisePicker.jsx';
@@ -66,7 +67,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
     },
   ];
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div style={{
@@ -164,6 +165,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
                       type: noteType,
                       text: noteText.trim(),
                       showOnNextWorkout: noteType === 'regular',
+                      delivered: noteType === 'sticky',
                     }],
                   });
                 }}
@@ -383,6 +385,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
           />
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

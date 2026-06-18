@@ -96,6 +96,16 @@ export function getPreviousDataForExercise(exerciseId) {
   return null;
 }
 
+export function getPreviousNotesForExercise(exerciseId) {
+  const workouts = getWorkouts()
+    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+  for (const w of workouts) {
+    const ex = w.exercises.find(e => e.exerciseId === exerciseId);
+    if (ex?.notes?.length) return ex.notes;
+  }
+  return [];
+}
+
 export function getPersonalRecords(exerciseId) {
   const workouts = getWorkouts();
   let maxWeight = 0;

@@ -10,6 +10,7 @@ import {
   saveActiveWorkout,
   clearActiveWorkout,
   getPreviousDataForExercise,
+  getPreviousNotesForExercise,
 } from './data/db.js';
 import { supabase } from './data/supabase.js';
 import { setSyncUser, uploadToCloud, downloadFromCloud } from './data/sync.js';
@@ -69,13 +70,19 @@ export default function App() {
       supersets: template.supersets || [],
       exercises: template.exercises.map(te => {
         const prevData = getPreviousDataForExercise(te.exerciseId);
+        const prevNotes = getPreviousNotesForExercise(te.exerciseId);
         return {
           exerciseId: te.exerciseId,
           exerciseName: '',
           weightUnit: te.weightUnit || settings.defaultWeightUnit,
           restTimerSeconds: te.restTimerSeconds,
           barType: te.barType,
-          notes: [],
+          notes: prevNotes
+            .filter(n => n.type === 'sticky' || n.showOnNextWorkout)
+            .map(n => n.type === 'regular'
+              ? { ...n, showOnNextWorkout: false, delivered: true }
+              : { ...n, delivered: true }
+            ),
           sets: (te.sets || Array.from({ length: te.defaultSets || 3 }, () => ({ setType: 'normal' }))).map((s, i) => ({
             setNumber: i + 1,
             setType: s.setType || 'normal',

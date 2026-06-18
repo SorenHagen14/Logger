@@ -19,6 +19,7 @@ export default function ActiveWorkout() {
   const [menuExerciseIdx, setMenuExerciseIdx] = useState(null);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
+  const [dragActivating, setDragActivating] = useState(null);
   const dragRefs = useRef([]);
   const longPressTimer = useRef(null);
   const dragStartY = useRef(0);
@@ -230,8 +231,10 @@ export default function ActiveWorkout() {
     const touch = e.touches[0];
     dragStartY.current = touch.clientY;
     isDragging.current = false;
+    setDragActivating(exIdx);
     longPressTimer.current = setTimeout(() => {
       isDragging.current = true;
+      setDragActivating(null);
       setDragIdx(exIdx);
       setDragOverIdx(exIdx);
       if (navigator.vibrate) navigator.vibrate(20);
@@ -245,6 +248,7 @@ export default function ActiveWorkout() {
         if (Math.abs(touch.clientY - dragStartY.current) > 10) {
           clearTimeout(longPressTimer.current);
           longPressTimer.current = null;
+          setDragActivating(null);
         }
       }
       return;
@@ -268,6 +272,7 @@ export default function ActiveWorkout() {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+    setDragActivating(null);
     if (isDragging.current && dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
       setActiveWorkout(prev => {
         const exs = [...prev.exercises];
@@ -340,7 +345,8 @@ export default function ActiveWorkout() {
               ref={el => dragRefs.current[exIdx] = el}
               style={{
                 opacity: dragIdx === exIdx ? 0.4 : 1,
-                transition: dragIdx !== null ? 'opacity 0.15s' : undefined,
+                transform: dragActivating === exIdx ? 'scale(0.98)' : undefined,
+                transition: 'opacity 0.15s, transform 0.15s',
                 borderTop: dragOverIdx === exIdx && dragIdx !== null && dragIdx > exIdx ? '2px solid var(--accent)' : undefined,
                 borderBottom: dragOverIdx === exIdx && dragIdx !== null && dragIdx < exIdx ? '2px solid var(--accent)' : undefined,
                 paddingTop: dragOverIdx === exIdx && dragIdx !== null && dragIdx > exIdx ? 8 : undefined,
@@ -379,7 +385,7 @@ export default function ActiveWorkout() {
                       letterSpacing: '0.04em',
                       userSelect: 'none',
                       WebkitUserSelect: 'none',
-                      touchAction: 'pan-x',
+                      touchAction: 'auto',
                       cursor: 'grab',
                     }}
                     onTouchStart={(e) => handleTouchStart(exIdx, e)}
@@ -397,7 +403,7 @@ export default function ActiveWorkout() {
                 </div>
 
                 {/* Notes */}
-                {ex.notes?.filter(n => n.type === 'sticky' || n.showOnNextWorkout).map((note, ni) => (
+                {ex.notes?.filter(n => n.delivered).map((note, ni) => (
                   <div key={ni} style={{
                     background: 'var(--note-bg)',
                     padding: '8px 12px',
@@ -588,7 +594,6 @@ export default function ActiveWorkout() {
         <ConfirmDialog
           title="Cancel Workout"
           message="Are you sure? All logged data for this session will be lost."
-          summary={workout?.exercises?.map(ex => `${ex.sets?.length || 0} x ${getExName(ex.exerciseId)}`)}
           confirmText="Cancel Workout"
           danger
           onConfirm={() => { setShowCancelConfirm(false); cancelWorkout(); }}
@@ -704,7 +709,11 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
               onClick={(e) => {
                 e.stopPropagation();
                 const rect = e.currentTarget.getBoundingClientRect();
-                setTypeMenuPos({ top: rect.top, left: rect.right + 4 });
+                const menuWidth = 130;
+                const menuHeight = 176;
+                const left = Math.min(rect.right + 4, window.innerWidth - menuWidth - 8);
+                const top = Math.min(rect.top, window.innerHeight - menuHeight - 8);
+                setTypeMenuPos({ top, left });
                 setShowTypeMenu(!showTypeMenu);
               }}
               style={{

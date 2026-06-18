@@ -83,46 +83,38 @@ export default function WorkoutDetail({ workout, onBack }) {
               ))}
 
               {/* Set Header */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '32px 1fr 1fr auto',
-                gap: 8,
-                padding: '4px 0',
-              }}>
-                {['Set', 'Weight', 'Reps', 'RPE'].map((h, hi) => (
-                  <span key={hi} className="label" style={{ margin: 0 }}>{h}</span>
-                ))}
-              </div>
-
-              {completedSets.map((s, j) => {
-                const typeColors = {
-                  normal: 'var(--text)',
-                  'warm-up': 'var(--yellow)',
-                  failure: 'var(--red)',
-                  drop: 'var(--green)',
-                };
+              {(() => {
+                const hasRpe = completedSets.some(s => s.rpe);
+                const gridCols = hasRpe ? '32px 1fr 1fr auto' : '32px 1fr 1fr';
+                const typeColors = { normal: 'var(--text)', 'warm-up': 'var(--yellow)', failure: 'var(--red)', drop: 'var(--green)' };
                 return (
-                  <div key={j} style={{
-                    display: 'grid',
-                    gridTemplateColumns: '32px 1fr 1fr auto',
-                    gap: 8,
-                    padding: '6px 0',
-                    fontSize: 14,
-                    borderTop: '1px solid var(--border)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>
-                    <span style={{
-                      color: typeColors[s.setType] || 'var(--text)',
-                      fontWeight: 700,
-                    }}>
-                      {s.setType === 'warm-up' ? 'W' : s.setType === 'failure' ? 'F' : s.setType === 'drop' ? 'D' : j + 1}
-                    </span>
-                    <span>{s.weight || 0} {s.weightUnit || 'lbs'}</span>
-                    <span>{s.reps || 0}</span>
-                    <span style={{ color: 'var(--text-muted)' }}>{s.rpe || '---'}</span>
-                  </div>
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 8, padding: '4px 0' }}>
+                      {['Set', 'Weight', 'Reps', ...(hasRpe ? ['RPE'] : [])].map((h, hi) => (
+                        <span key={hi} className="label" style={{ margin: 0 }}>{h}</span>
+                      ))}
+                    </div>
+                    {completedSets.map((s, j) => (
+                      <div key={j} style={{
+                        display: 'grid',
+                        gridTemplateColumns: gridCols,
+                        gap: 8,
+                        padding: '6px 0',
+                        fontSize: 14,
+                        borderTop: '1px solid var(--border)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>
+                        <span style={{ color: typeColors[s.setType] || 'var(--text)', fontWeight: 700 }}>
+                          {s.setType === 'warm-up' ? 'W' : s.setType === 'failure' ? 'F' : s.setType === 'drop' ? 'D' : (s.setNumber || j + 1)}
+                        </span>
+                        <span>{s.weight || 0} {s.weightUnit || 'lbs'}</span>
+                        <span>{s.reps || 0}</span>
+                        {hasRpe && <span style={{ color: 'var(--text-muted)' }}>{s.rpe || '—'}</span>}
+                      </div>
+                    ))}
+                  </>
                 );
-              })}
+              })()}
             </div>
           );
         })}

@@ -22,15 +22,19 @@ export default function WorkoutSummary({ workout, onDone }) {
           if (Number(s.reps) > prevMaxReps) prevMaxReps = Number(s.reps);
         }
       }
+      // Scan ALL completed sets to find this workout's best
+      let thisMaxWeight = 0;
+      let thisMaxWeightSet = null;
+      let thisMaxReps = 0;
       for (const s of ex.sets) {
-        if (Number(s.weight) > prevMaxWeight && Number(s.weight) > 0) {
-          prList.push({ exercise: getExName(ex.exerciseId), type: 'weight', value: `${s.weight} ${s.weightUnit || 'lbs'}` });
-          break;
-        }
-        if (Number(s.reps) > prevMaxReps && Number(s.reps) > 0) {
-          prList.push({ exercise: getExName(ex.exerciseId), type: 'reps', value: `${s.reps} reps` });
-          break;
-        }
+        if (!s.completed) continue;
+        if (Number(s.weight) > thisMaxWeight) { thisMaxWeight = Number(s.weight); thisMaxWeightSet = s; }
+        if (Number(s.reps) > thisMaxReps) thisMaxReps = Number(s.reps);
+      }
+      if (thisMaxWeight > prevMaxWeight && thisMaxWeight > 0) {
+        prList.push({ exercise: getExName(ex.exerciseId), type: 'weight', value: `${thisMaxWeight} ${thisMaxWeightSet?.weightUnit || 'lbs'}` });
+      } else if (thisMaxReps > prevMaxReps && thisMaxReps > 0) {
+        prList.push({ exercise: getExName(ex.exerciseId), type: 'reps', value: `${thisMaxReps} reps` });
       }
     }
     return prList;
@@ -67,10 +71,14 @@ export default function WorkoutSummary({ workout, onDone }) {
     ), 0
   );
 
+  const volumeUnit = workout.exercises.find(ex => ex.weightUnit)?.weightUnit
+    || workout.exercises[0]?.sets[0]?.weightUnit
+    || 'lbs';
+
   const stats = [
     { label: 'Duration', value: formatDuration(workout.startedAt, workout.completedAt) },
     { label: 'Sets', value: completedSets },
-    { label: 'Volume', value: totalVolume.toLocaleString() + ' lbs' },
+    { label: 'Volume', value: totalVolume.toLocaleString() + ' ' + volumeUnit },
   ];
 
   return (
@@ -161,7 +169,7 @@ export default function WorkoutSummary({ workout, onDone }) {
       {/* Exercise Breakdown */}
       <div className="label" style={{ marginBottom: 12 }}>Exercises</div>
       <div style={{ marginBottom: 32 }}>
-        {workout.exercises.map((ex, i) => (
+        {workout.exercises.filter(ex => ex.sets.some(s => s.completed)).map((ex, i) => (
           <div key={i} style={{
             borderTop: i === 0 ? '1px solid var(--border)' : 'none',
             borderBottom: '1px solid var(--border)',

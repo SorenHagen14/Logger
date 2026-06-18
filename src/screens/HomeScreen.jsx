@@ -29,7 +29,7 @@ export default function HomeScreen() {
   const templates = getTemplates().sort((a, b) => {
     if (!a.lastCompletedAt && !b.lastCompletedAt) return 0;
     if (!a.lastCompletedAt) return -1;
-    if (!b.lastCompletedAt) return -1;
+    if (!b.lastCompletedAt) return 1;
     return new Date(a.lastCompletedAt) - new Date(b.lastCompletedAt);
   });
 
@@ -140,70 +140,60 @@ export default function HomeScreen() {
             {templates.map(t => (
               <div
                 key={t.id}
+                onClick={() => setConfirmStart(t)}
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
                   borderRadius: 8,
                   padding: '16px',
                   position: 'relative',
+                  cursor: 'pointer',
                 }}
               >
-                <button
-                  onClick={() => setConfirmStart(t)}
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: 0,
-                    background: 'none',
-                  }}
-                >
-                  <div style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    marginBottom: 8,
-                    paddingRight: 36,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.02em',
-                    lineHeight: 1.3,
-                  }}>
-                    {t.name || 'Untitled Template'}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 2,
-                    fontSize: 11,
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}>
-                    <span>{formatRelativeTime(t.lastCompletedAt)}</span>
-                    {t.exercises.length > 0 && (
-                      <span>{t.exercises.length} exercise{t.exercises.length !== 1 ? 's' : ''}</span>
-                    )}
-                  </div>
-                </button>
-                {/* Arrow button */}
-                <button
-                  onClick={() => setConfirmStart(t)}
-                  style={{
-                    position: 'absolute',
-                    bottom: 12,
-                    right: 12,
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: 'var(--ghost)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 14,
-                  }}
-                >
+                <div style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  marginBottom: 8,
+                  paddingRight: 36,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.02em',
+                  lineHeight: 1.3,
+                }}>
+                  {t.name || 'Untitled Template'}
+                </div>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  fontSize: 11,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}>
+                  <span>{formatRelativeTime(t.lastCompletedAt)}</span>
+                  {t.exercises.length > 0 && (
+                    <span>{t.exercises.length} exercise{t.exercises.length !== 1 ? 's' : ''}</span>
+                  )}
+                </div>
+                {/* Arrow indicator — decorative only */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 12,
+                  right: 12,
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: 'var(--ghost)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 14,
+                  pointerEvents: 'none',
+                }}>
                   &rsaquo;
-                </button>
+                </div>
                 {/* Menu button */}
                 <button
                   onClick={(e) => {
