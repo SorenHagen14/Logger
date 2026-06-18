@@ -868,7 +868,6 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
       {numericModal && (
         <NumericInputModal
           value={numericModal === 'weight' ? set.weight : set.reps}
-          label={numericModal === 'weight' ? (weightUnit || 'lbs').toUpperCase() : 'Reps'}
           allowDecimal={numericModal === 'weight'}
           placeholder={numericModal === 'weight' ? (prev?.weight?.toString() || '—') : (prev?.reps?.toString() || '—')}
           onConfirm={(val) => onUpdateSet({ [numericModal]: val })}

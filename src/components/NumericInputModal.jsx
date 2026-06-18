@@ -1,21 +1,20 @@
 import { useState } from 'react';
 
-export default function NumericInputModal({ value, label, allowDecimal, placeholder, onConfirm, onClose }) {
+export default function NumericInputModal({ value, allowDecimal, placeholder, onConfirm, onClose }) {
   const [display, setDisplay] = useState(String(value ?? ''));
 
   const handleKey = (key) => {
+    let next;
     if (key === 'back') {
-      setDisplay(prev => prev.slice(0, -1));
+      next = display.slice(0, -1);
     } else if (key === '.') {
       if (display.includes('.')) return;
-      setDisplay(prev => prev === '' ? '0.' : prev + '.');
+      next = display === '' ? '0.' : display + '.';
     } else {
-      if (display === '0') {
-        setDisplay(key);
-      } else {
-        setDisplay(prev => prev + key);
-      }
+      next = display === '0' ? key : display + key;
     }
+    setDisplay(next);
+    onConfirm(next);
   };
 
   const handleDone = () => {
@@ -49,18 +48,9 @@ export default function NumericInputModal({ value, label, allowDecimal, placehol
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '14px 16px',
+          padding: '10px 16px',
           borderBottom: '1px solid var(--border)',
         }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-            color: 'var(--text-secondary)',
-          }}>
-            {label}
-          </span>
           <button
             onClick={handleDone}
             style={{ color: 'var(--text-muted)', padding: '4px 8px', lineHeight: 0 }}
@@ -70,27 +60,15 @@ export default function NumericInputModal({ value, label, allowDecimal, placehol
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
-        </div>
-
-        {/* Value Display */}
-        <div style={{
-          padding: '20px 24px 16px',
-          textAlign: 'center',
-          minHeight: 96,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <span style={{
-            fontSize: 64,
-            fontWeight: 800,
-            letterSpacing: '-0.03em',
-            fontVariantNumeric: 'tabular-nums',
-            lineHeight: 1,
-            color: display ? 'var(--text)' : 'var(--text-muted)',
-          }}>
-            {display || placeholder || '—'}
-          </span>
+          <button
+            onClick={handleDone}
+            style={{ color: 'var(--accent)', padding: '4px 8px', lineHeight: 0 }}
+            aria-label="Done"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter">
+              <polyline points="4 12 10 18 20 6" />
+            </svg>
+          </button>
         </div>
 
         {/* Keypad */}
@@ -102,7 +80,7 @@ export default function NumericInputModal({ value, label, allowDecimal, placehol
         }}>
           {rows.flat().map((key, i) => {
             if (key === null) {
-              return <div key={i} style={{ background: 'var(--bg)', height: 68 }} />;
+              return <div key={i} style={{ background: 'var(--bg)', height: 58 }} />;
             }
             const isBack = key === 'back';
             return (
@@ -110,7 +88,7 @@ export default function NumericInputModal({ value, label, allowDecimal, placehol
                 key={i}
                 onPointerDown={(e) => { e.preventDefault(); handleKey(key); }}
                 style={{
-                  height: 68,
+                  height: 58,
                   background: 'var(--surface)',
                   fontSize: isBack ? 22 : 26,
                   fontWeight: isBack ? 400 : 500,
