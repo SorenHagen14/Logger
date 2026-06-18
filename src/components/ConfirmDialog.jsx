@@ -1,12 +1,11 @@
 import { createPortal } from 'react-dom';
 
-export default function ConfirmDialog({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, onConfirm, onCancel }) {
+export default function ConfirmDialog({ title, message, summary, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, onConfirm, onCancel }) {
   return createPortal(
-    <div className="modal-overlay" onClick={onCancel}>
+    <div className="confirm-overlay" onClick={onCancel}>
       <div
-        className="modal-content"
+        className="confirm-content"
         onClick={e => e.stopPropagation()}
-        style={{ padding: 24 }}
       >
         <h3 style={{
           fontSize: 16,
@@ -20,11 +19,32 @@ export default function ConfirmDialog({ title, message, confirmText = 'Confirm',
         <p style={{
           fontSize: 14,
           color: 'var(--text-secondary)',
-          marginBottom: 24,
+          marginBottom: summary ? 16 : 24,
           lineHeight: 1.5,
         }}>
           {message}
         </p>
+        {summary && summary.length > 0 && (
+          <div style={{
+            marginBottom: 24,
+            padding: '12px 0',
+            borderTop: '1px solid var(--border)',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+          }}>
+            {summary.map((line, i) => (
+              <div key={i} style={{
+                fontSize: 13,
+                color: 'var(--text-secondary)',
+                letterSpacing: '0.02em',
+              }}>
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 12 }}>
           <button
             className="btn"

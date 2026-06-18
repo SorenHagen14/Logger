@@ -7,6 +7,7 @@ import RestTimer from '../components/RestTimer.jsx';
 import UndoToast from '../components/UndoToast.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import ExerciseMenu from '../components/ExerciseMenu.jsx';
+import NumericInputModal from '../components/NumericInputModal.jsx';
 
 export default function ActiveWorkout() {
   const { activeWorkout, setActiveWorkout, finishWorkout, cancelWorkout } = useContext(AppContext);
@@ -16,6 +17,12 @@ export default function ActiveWorkout() {
   const [activeTimers, setActiveTimers] = useState({});
   const [toast, setToast] = useState(null);
   const [menuExerciseIdx, setMenuExerciseIdx] = useState(null);
+  const [dragIdx, setDragIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+  const dragRefs = useRef([]);
+  const longPressTimer = useRef(null);
+  const dragStartY = useRef(0);
+  const isDragging = useRef(false);
 
   const settings = getSettings();
   const allExercises = getExercises();
@@ -219,6 +226,61 @@ export default function ActiveWorkout() {
     });
   }, [workout, setActiveWorkout, settings.defaultWeightUnit]);
 
+  const handleTouchStart = useCallback((exIdx, e) => {
+    const touch = e.touches[0];
+    dragStartY.current = touch.clientY;
+    isDragging.current = false;
+    longPressTimer.current = setTimeout(() => {
+      isDragging.current = true;
+      setDragIdx(exIdx);
+      setDragOverIdx(exIdx);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, 400);
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging.current) {
+      if (longPressTimer.current) {
+        const touch = e.touches[0];
+        if (Math.abs(touch.clientY - dragStartY.current) > 10) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+      }
+      return;
+    }
+    e.preventDefault();
+    const touch = e.touches[0];
+    const y = touch.clientY;
+    for (let i = 0; i < dragRefs.current.length; i++) {
+      const el = dragRefs.current[i];
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        setDragOverIdx(i);
+        break;
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (isDragging.current && dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+      setActiveWorkout(prev => {
+        const exs = [...prev.exercises];
+        const [moved] = exs.splice(dragIdx, 1);
+        exs.splice(dragOverIdx, 0, moved);
+        return { ...prev, exercises: exs };
+      });
+    }
+    isDragging.current = false;
+    setDragIdx(null);
+    setDragOverIdx(null);
+  }, [dragIdx, dragOverIdx, setActiveWorkout]);
+
   if (!workout) return null;
 
   return (
@@ -273,7 +335,18 @@ export default function ActiveWorkout() {
           const isFirstInSuperset = supersetGroup?.exerciseIds[0] === ex.exerciseId;
 
           return (
-            <div key={`${ex.exerciseId}-${exIdx}`}>
+            <div
+              key={`${ex.exerciseId}-${exIdx}`}
+              ref={el => dragRefs.current[exIdx] = el}
+              style={{
+                opacity: dragIdx === exIdx ? 0.4 : 1,
+                transition: dragIdx !== null ? 'opacity 0.15s' : undefined,
+                borderTop: dragOverIdx === exIdx && dragIdx !== null && dragIdx > exIdx ? '2px solid var(--accent)' : undefined,
+                borderBottom: dragOverIdx === exIdx && dragIdx !== null && dragIdx < exIdx ? '2px solid var(--accent)' : undefined,
+                paddingTop: dragOverIdx === exIdx && dragIdx !== null && dragIdx > exIdx ? 8 : undefined,
+                paddingBottom: dragOverIdx === exIdx && dragIdx !== null && dragIdx < exIdx ? 8 : undefined,
+              }}
+            >
               {isSupersetMember && isFirstInSuperset && (
                 <div style={{
                   fontSize: 10,
@@ -297,12 +370,22 @@ export default function ActiveWorkout() {
                   alignItems: 'center',
                   marginBottom: 8,
                 }}>
-                  <div className="exercise-name" style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}>
+                  <div
+                    className="exercise-name"
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      touchAction: 'pan-x',
+                      cursor: 'grab',
+                    }}
+                    onTouchStart={(e) => handleTouchStart(exIdx, e)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
                     {getExName(ex.exerciseId)}
                   </div>
                   <button
@@ -378,6 +461,7 @@ export default function ActiveWorkout() {
                             displayNum={displayNum}
                             prev={prev}
                             setTypeColor={setTypeColors[set.setType]}
+                            weightUnit={ex.weightUnit || settings.defaultWeightUnit}
                             onUpdateSet={(updates) => updateSet(exIdx, setIdx, updates)}
                             onToggleComplete={() => toggleSetComplete(exIdx, setIdx)}
                             onDelete={() => deleteSet(exIdx, setIdx)}
@@ -493,6 +577,7 @@ export default function ActiveWorkout() {
         <ConfirmDialog
           title="Finish Workout"
           message="Are you done? This will save your workout."
+          summary={workout?.exercises?.map(ex => `${ex.sets?.length || 0} x ${getExName(ex.exerciseId)}`)}
           confirmText="Finish"
           onConfirm={() => { setShowFinishConfirm(false); finishWorkout(); }}
           onCancel={() => setShowFinishConfirm(false)}
@@ -503,6 +588,7 @@ export default function ActiveWorkout() {
         <ConfirmDialog
           title="Cancel Workout"
           message="Are you sure? All logged data for this session will be lost."
+          summary={workout?.exercises?.map(ex => `${ex.sets?.length || 0} x ${getExName(ex.exerciseId)}`)}
           confirmText="Cancel Workout"
           danger
           onConfirm={() => { setShowCancelConfirm(false); cancelWorkout(); }}
@@ -535,13 +621,14 @@ export default function ActiveWorkout() {
   );
 }
 
-function SetRow({ set, setIdx, displayNum, prev, setTypeColor, onUpdateSet, onToggleComplete, onDelete }) {
+function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpdateSet, onToggleComplete, onDelete }) {
   const [swiping, setSwiping] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const startX = useRef(0);
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [typeMenuPos, setTypeMenuPos] = useState({ top: 0, left: 0 });
   const [showRpe, setShowRpe] = useState(false);
+  const [numericModal, setNumericModal] = useState(null); // null | 'weight' | 'reps'
 
   const handleTouchStart = (e) => {
     startX.current = e.touches[0].clientX;
@@ -645,40 +732,38 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, onUpdateSet, onTo
           </span>
 
           {/* Weight */}
-          <input
-            type="number"
-            inputMode="decimal"
-            value={set.weight}
-            placeholder={prev?.weight?.toString() || '—'}
-            onChange={e => onUpdateSet({ weight: e.target.value })}
+          <button
+            onClick={(e) => { e.stopPropagation(); setNumericModal('weight'); }}
             style={{
               height: 36,
               background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              border: `1px solid ${numericModal === 'weight' ? 'var(--accent)' : 'var(--border)'}`,
               textAlign: 'center',
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
               width: '100%',
+              color: set.weight !== '' ? 'var(--text)' : 'var(--text-muted)',
             }}
-          />
+          >
+            {set.weight !== '' ? set.weight : (prev?.weight?.toString() || '—')}
+          </button>
 
           {/* Reps */}
-          <input
-            type="number"
-            inputMode="numeric"
-            value={set.reps}
-            placeholder={prev?.reps?.toString() || '—'}
-            onChange={e => onUpdateSet({ reps: e.target.value })}
+          <button
+            onClick={(e) => { e.stopPropagation(); setNumericModal('reps'); }}
             style={{
               height: 36,
               background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              border: `1px solid ${numericModal === 'reps' ? 'var(--accent)' : 'var(--border)'}`,
               textAlign: 'center',
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
               width: '100%',
+              color: set.reps !== '' ? 'var(--text)' : 'var(--text-muted)',
             }}
-          />
+          >
+            {set.reps !== '' ? set.reps : (prev?.reps?.toString() || '—')}
+          </button>
 
           {/* Checkbox */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -778,6 +863,17 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, onUpdateSet, onTo
             </button>
           ))}
         </div>
+      )}
+
+      {numericModal && (
+        <NumericInputModal
+          value={numericModal === 'weight' ? set.weight : set.reps}
+          label={numericModal === 'weight' ? (weightUnit || 'lbs').toUpperCase() : 'Reps'}
+          allowDecimal={numericModal === 'weight'}
+          placeholder={numericModal === 'weight' ? (prev?.weight?.toString() || '—') : (prev?.reps?.toString() || '—')}
+          onConfirm={(val) => onUpdateSet({ [numericModal]: val })}
+          onClose={() => setNumericModal(null)}
+        />
       )}
     </>
   );

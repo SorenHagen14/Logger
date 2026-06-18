@@ -1,7 +1,7 @@
 import { useState, useContext, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AppContext } from '../App.jsx';
-import { getTemplates, getWorkouts, saveTemplate, deleteTemplate } from '../data/db.js';
+import { getTemplates, getWorkouts, getExercises, saveTemplate, deleteTemplate } from '../data/db.js';
 import { generateId, formatRelativeTime, formatDate } from '../utils/helpers.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
@@ -14,6 +14,17 @@ export default function HomeScreen() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const renameInputRef = useRef(null);
+
+  const allExercises = getExercises();
+  const getExName = (id) => allExercises.find(e => e.id === id)?.name || 'Unknown';
+
+  const buildSummary = (template) => {
+    if (!template?.exercises?.length) return [];
+    return template.exercises.map(ex => {
+      const setCount = ex.sets?.length || ex.defaultSets || 3;
+      return `${setCount} x ${getExName(ex.exerciseId)}`;
+    });
+  };
 
   const templates = getTemplates().sort((a, b) => {
     if (!a.lastCompletedAt && !b.lastCompletedAt) return 0;
@@ -300,6 +311,7 @@ export default function HomeScreen() {
         <ConfirmDialog
           title={`Start ${confirmStart.name || 'Untitled Template'}?`}
           message="This will begin a new workout session."
+          summary={buildSummary(confirmStart)}
           confirmText="Start"
           onConfirm={() => {
             startWorkout(confirmStart);

@@ -1,16 +1,16 @@
 import { useState, useEffect, useContext } from 'react';
-import { getSettings, saveSettings, getTemplates, getExercises } from '../data/db.js';
+import { getSettings, saveSettings } from '../data/db.js';
 import { AppContext } from '../App.jsx';
 import StrongImport from '../components/StrongImport.jsx';
 import AuthModal from '../components/AuthModal.jsx';
 import { supabase } from '../data/supabase.js';
-import { uploadToCloud } from '../data/sync.js';
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState(getSettings());
   const [showStrongImport, setShowStrongImport] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [syncStatus, setSyncStatus] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(null);
   const ctx = useContext(AppContext);
   const { user, syncing } = ctx;
 
@@ -60,55 +60,26 @@ export default function SettingsScreen() {
                 {user.email}
               </span>
             </div>
-            {syncStatus ? (
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                {syncStatus}
-              </p>
-            ) : null}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={async () => {
-                  setSyncStatus('Syncing…');
-                  const ok = await uploadToCloud(user.id);
-                  setSyncStatus(ok ? 'Synced ✓' : 'Sync failed');
-                  setTimeout(() => setSyncStatus(''), 3000);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  background: 'transparent',
-                  color: 'var(--text)',
-                  border: '1px solid var(--border)',
-                  textAlign: 'center',
-                }}
-              >
-                Sync Now
-              </button>
-              <button
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  ctx.forceUpdate();
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  background: 'transparent',
-                  color: 'var(--text-secondary)',
-                  border: '1px solid var(--border)',
-                  textAlign: 'center',
-                }}
-              >
-                Sign Out
-              </button>
-            </div>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                ctx.forceUpdate();
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border)',
+                textAlign: 'center',
+              }}
+            >
+              Sign Out
+            </button>
           </div>
         ) : (
           <div>
@@ -220,89 +191,9 @@ export default function SettingsScreen() {
         </div>
       </div>
 
-      {/* Import from Strong */}
-      <div style={{
-        borderBottom: '1px solid var(--border)',
-        padding: '0 0 24px',
-        marginBottom: 24,
-      }}>
-        <div className="label" style={{ marginBottom: 14 }}>Import</div>
-        <button
-          onClick={() => setShowStrongImport(true)}
-          style={{
-            width: '100%',
-            padding: '14px',
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            background: 'transparent',
-            color: 'var(--text)',
-            border: '1px solid var(--border)',
-            textAlign: 'center',
-          }}
-        >
-          Import from Strong
-        </button>
-      </div>
-
-      {/* Data Management */}
+      {/* Data */}
       <div style={{ marginBottom: 24 }}>
         <div className="label" style={{ marginBottom: 14 }}>Data</div>
-        <button
-          onClick={async () => {
-            const templates = getTemplates();
-            const allExercises = getExercises();
-            const getName = (id) => allExercises.find(e => e.id === id)?.name || 'Unknown';
-
-            const rows = [['Template', 'Exercise', 'Set Number', 'Set Type']];
-            for (const t of templates) {
-              for (const ex of (t.exercises || [])) {
-                const sets = ex.sets || Array.from({ length: ex.defaultSets || 3 }, () => ({ setType: 'normal' }));
-                sets.forEach((s, i) => {
-                  rows.push([
-                    `"${t.name.replace(/"/g, '""')}"`,
-                    `"${getName(ex.exerciseId).replace(/"/g, '""')}"`,
-                    String(i + 1),
-                    s.setType || 'normal',
-                  ]);
-                });
-              }
-            }
-
-            const csv = rows.map(r => r.join(',')).join('\n');
-            const filename = `workout-templates-${new Date().toISOString().split('T')[0]}.csv`;
-            const file = new File([csv], filename, { type: 'text/csv' });
-
-            if (navigator.canShare?.({ files: [file] })) {
-              try {
-                await navigator.share({ files: [file], title: 'Workout Templates' });
-              } catch { /* user cancelled share */ }
-            } else {
-              const url = URL.createObjectURL(file);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = filename;
-              a.click();
-              URL.revokeObjectURL(url);
-            }
-          }}
-          style={{
-            width: '100%',
-            padding: '14px',
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            background: 'transparent',
-            color: 'var(--text)',
-            border: '1px solid var(--border)',
-            marginBottom: 8,
-            textAlign: 'center',
-          }}
-        >
-          Export Templates CSV
-        </button>
         <button
           onClick={() => {
             const data = {
@@ -315,7 +206,7 @@ export default function SettingsScreen() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `workout-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `logger-backup-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
           }}
@@ -333,11 +224,11 @@ export default function SettingsScreen() {
             textAlign: 'center',
           }}
         >
-          Export Backup
+          Export Training Data
         </button>
-        <label
+        <button
+          onClick={() => setShowImportModal(true)}
           style={{
-            display: 'block',
             width: '100%',
             padding: '14px',
             fontSize: 13,
@@ -348,34 +239,10 @@ export default function SettingsScreen() {
             color: 'var(--text)',
             border: '1px solid var(--border)',
             textAlign: 'center',
-            cursor: 'pointer',
           }}
         >
-          Import Backup
-          <input
-            type="file"
-            accept=".json"
-            style={{ display: 'none' }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                try {
-                  const data = JSON.parse(event.target.result);
-                  if (data.exercises) localStorage.setItem('wl_exercises', data.exercises);
-                  if (data.templates) localStorage.setItem('wl_templates', data.templates);
-                  if (data.workouts) localStorage.setItem('wl_workouts', data.workouts);
-                  if (data.settings) localStorage.setItem('wl_settings', data.settings);
-                  window.location.reload();
-                } catch {
-                  alert('Invalid backup file');
-                }
-              };
-              reader.readAsText(file);
-            }}
-          />
-        </label>
+          Import Training Data
+        </button>
       </div>
 
       <div style={{
@@ -398,6 +265,116 @@ export default function SettingsScreen() {
 
       {showAuthModal && (
         <AuthModal onClose={() => { setShowAuthModal(false); ctx.forceUpdate(); }} />
+      )}
+
+      {showImportModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+          onClick={() => setShowImportModal(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--surface)',
+              borderTop: '1px solid var(--border)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+            }}
+          >
+            <div style={{
+              padding: '20px 16px 16px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <span className="label">How to import from</span>
+              <button onClick={() => setShowImportModal(false)} style={{ color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, padding: '4px 8px' }}>✕</button>
+            </div>
+            {[{ id: 'strong', label: 'Strong' }].map(app => (
+              <div
+                key={app.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderBottom: '1px solid var(--border)',
+                }}
+              >
+                <button
+                  onClick={() => { setShowImportModal(false); setShowStrongImport(true); }}
+                  style={{
+                    flex: 1,
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: 'var(--text)',
+                  }}
+                >
+                  {app.label}
+                </button>
+                <button
+                  onClick={() => setShowInstructions(app.id)}
+                  style={{
+                    padding: '16px',
+                    color: 'var(--text-muted)',
+                    fontSize: 16,
+                    lineHeight: 1,
+                    flexShrink: 0,
+                  }}
+                  aria-label={`How to export from ${app.label}`}
+                >
+                  ?
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showInstructions === 'strong' && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 110, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+          onClick={() => setShowInstructions(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--surface)',
+              borderTop: '1px solid var(--border)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+            }}
+          >
+            <div style={{
+              padding: '20px 16px 16px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <span className="label">Export from Strong</span>
+              <button onClick={() => setShowInstructions(null)} style={{ color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, padding: '4px 8px' }}>✕</button>
+            </div>
+            <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {['Open the Strong app', 'Tap the Profile tab', 'Scroll down and tap Settings', 'Tap Export Data', 'Choose CSV format and share the file'].map((step, i) => (
+                <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'var(--accent)',
+                    letterSpacing: '0.06em',
+                    paddingTop: 2,
+                    flexShrink: 0,
+                    width: 16,
+                    textAlign: 'right',
+                  }}>{i + 1}</span>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
