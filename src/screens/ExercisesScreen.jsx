@@ -3,6 +3,7 @@ import { getExercises, saveCustomExercise, deleteCustomExercise } from '../data/
 import { MUSCLE_GROUPS } from '../data/exercises.js';
 import { generateId } from '../utils/helpers.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import MuscleMap from '../components/MuscleMap.jsx';
 
 export default function ExercisesScreen() {
   const [search, setSearch] = useState('');
@@ -62,21 +63,32 @@ export default function ExercisesScreen() {
 
   return (
     <div className="screen">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>Exercises</h1>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+      }}>
+        <h1 style={{
+          fontSize: 40,
+          fontWeight: 800,
+          letterSpacing: '-0.03em',
+          textTransform: 'uppercase',
+        }}>
+          Exercises
+        </h1>
         <button
           onClick={() => { setShowCreate(true); setEditingExercise(null); setNewName(''); setNewGroup('Chest'); }}
           style={{
             width: 32,
             height: 32,
-            borderRadius: 8,
             background: 'var(--accent)',
-            color: 'white',
+            color: 'var(--accent-text)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 20,
-            fontWeight: 300,
+            fontWeight: 400,
           }}
         >
           +
@@ -106,11 +118,12 @@ export default function ExercisesScreen() {
           style={{
             flexShrink: 0,
             padding: '6px 14px',
-            borderRadius: 20,
-            fontSize: 13,
-            fontWeight: 500,
-            background: !filter ? 'var(--accent)' : 'var(--surface)',
-            color: !filter ? 'white' : 'var(--text-muted)',
+            fontSize: 12,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            background: !filter ? 'var(--accent)' : 'transparent',
+            color: !filter ? 'var(--accent-text)' : 'var(--text-muted)',
             border: `1px solid ${!filter ? 'var(--accent)' : 'var(--border)'}`,
           }}
         >
@@ -123,11 +136,12 @@ export default function ExercisesScreen() {
             style={{
               flexShrink: 0,
               padding: '6px 14px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 500,
-              background: filter === mg ? 'var(--accent)' : 'var(--surface)',
-              color: filter === mg ? 'white' : 'var(--text-muted)',
+              fontSize: 12,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              background: filter === mg ? 'var(--accent)' : 'transparent',
+              color: filter === mg ? 'var(--accent-text)' : 'var(--text-muted)',
               border: `1px solid ${filter === mg ? 'var(--accent)' : 'var(--border)'}`,
             }}
           >
@@ -136,58 +150,76 @@ export default function ExercisesScreen() {
         ))}
       </div>
 
-      {Object.entries(grouped).map(([group, exs]) => (
-        <div key={group}>
-          <div style={{
-            fontSize: 12,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            color: 'var(--text-muted)',
-            padding: '12px 0 6px',
-          }}>
-            {group} ({exs.length})
-          </div>
-          {exs.map(ex => (
-            <div key={ex.id} style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '12px 0',
-              borderBottom: '1px solid var(--border)',
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        {Object.entries(grouped).map(([group, exs]) => (
+          <div key={group}>
+            <div className="label" style={{
+              padding: '14px 0 8px',
             }}>
-              <span style={{ fontSize: 15 }}>{ex.name}</span>
-              {!ex.isBuiltIn && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => {
-                      setEditingExercise(ex);
-                      setNewName(ex.name);
-                      setNewGroup(ex.muscleGroup);
-                      setShowCreate(true);
-                    }}
-                    style={{ color: 'var(--text-muted)', fontSize: 13, padding: '4px 8px' }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(ex)}
-                    style={{ color: 'var(--red)', fontSize: 13, padding: '4px 8px' }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
+              {group} ({exs.length})
             </div>
-          ))}
-        </div>
-      ))}
+            {exs.map(ex => (
+              <div key={ex.id} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 0',
+                borderBottom: '1px solid var(--border)',
+              }}>
+                <MuscleMap muscleGroup={ex.muscleGroup} size={28} />
+                <span style={{ fontSize: 15, flex: 1 }}>{ex.name}</span>
+                {!ex.isBuiltIn && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => {
+                        setEditingExercise(ex);
+                        setNewName(ex.name);
+                        setNewGroup(ex.muscleGroup);
+                        setShowCreate(true);
+                      }}
+                      style={{
+                        color: 'var(--text-muted)',
+                        fontSize: 12,
+                        padding: '4px 8px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(ex)}
+                      style={{
+                        color: 'var(--red)',
+                        fontSize: 12,
+                        padding: '4px 8px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
 
       {/* Create / Edit Modal */}
       {showCreate && (
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
+            <h3 style={{
+              fontSize: 16,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              marginBottom: 16,
+            }}>
               {editingExercise ? 'Edit Exercise' : 'New Exercise'}
             </h3>
             <input
@@ -199,7 +231,7 @@ export default function ExercisesScreen() {
               autoFocus
               style={{ marginBottom: 16 }}
             />
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>Muscle Group</div>
+            <div className="label" style={{ marginBottom: 8 }}>Muscle Group</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
               {MUSCLE_GROUPS.map(mg => (
                 <button
@@ -207,10 +239,12 @@ export default function ExercisesScreen() {
                   onClick={() => setNewGroup(mg)}
                   style={{
                     padding: '8px 16px',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    background: newGroup === mg ? 'var(--accent)' : 'var(--bg)',
-                    color: newGroup === mg ? 'white' : 'var(--text-muted)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    background: newGroup === mg ? 'var(--accent)' : 'transparent',
+                    color: newGroup === mg ? 'var(--accent-text)' : 'var(--text-muted)',
                     border: `1px solid ${newGroup === mg ? 'var(--accent)' : 'var(--border)'}`,
                   }}
                 >
@@ -222,7 +256,7 @@ export default function ExercisesScreen() {
               <button
                 className="btn"
                 onClick={() => setShowCreate(false)}
-                style={{ flex: 1, background: 'var(--bg)', border: '1px solid var(--border)' }}
+                style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)' }}
               >
                 Cancel
               </button>

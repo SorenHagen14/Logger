@@ -4,10 +4,23 @@ export default function ConfirmDialog({ title, message, confirmText = 'Confirm',
       <div
         className="modal-content"
         onClick={e => e.stopPropagation()}
-        style={{ borderRadius: 16, padding: 24 }}
+        style={{ padding: 24 }}
       >
-        <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{title}</h3>
-        <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.5 }}>
+        <h3 style={{
+          fontSize: 16,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          marginBottom: 8,
+        }}>
+          {title}
+        </h3>
+        <p style={{
+          fontSize: 14,
+          color: 'var(--text-secondary)',
+          marginBottom: 24,
+          lineHeight: 1.5,
+        }}>
           {message}
         </p>
         <div style={{ display: 'flex', gap: 12 }}>
@@ -16,7 +29,7 @@ export default function ConfirmDialog({ title, message, confirmText = 'Confirm',
             onClick={onCancel}
             style={{
               flex: 1,
-              background: 'var(--surface)',
+              background: 'transparent',
               border: '1px solid var(--border)',
               color: 'var(--text)',
             }}

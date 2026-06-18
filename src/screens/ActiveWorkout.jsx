@@ -1,7 +1,7 @@
 import { useState, useContext, useCallback, useRef, useEffect } from 'react';
 import { AppContext } from '../App.jsx';
 import { getExercises, getPreviousDataForExercise, getSettings, saveActiveWorkout } from '../data/db.js';
-import { generateId, formatTimer } from '../utils/helpers.js';
+import { generateId } from '../utils/helpers.js';
 import ExercisePicker from '../components/ExercisePicker.jsx';
 import RestTimer from '../components/RestTimer.jsx';
 import UndoToast from '../components/UndoToast.jsx';
@@ -13,23 +13,13 @@ export default function ActiveWorkout() {
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
-  const [activeTimer, setActiveTimer] = useState(null);
+  const [activeTimers, setActiveTimers] = useState({});
   const [toast, setToast] = useState(null);
   const [menuExerciseIdx, setMenuExerciseIdx] = useState(null);
-  const [elapsed, setElapsed] = useState(0);
 
   const settings = getSettings();
   const allExercises = getExercises();
   const workout = activeWorkout;
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (workout?.startedAt) {
-        setElapsed(Math.floor((Date.now() - new Date(workout.startedAt).getTime()) / 1000));
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [workout?.startedAt]);
 
   useEffect(() => {
     if (workout) saveActiveWorkout(workout);
@@ -68,6 +58,22 @@ export default function ActiveWorkout() {
     }));
   }, [updateExercise, settings.defaultWeightUnit]);
 
+  const addDropSet = useCallback((exerciseIdx, afterSetIdx) => {
+    updateExercise(exerciseIdx, ex => {
+      const sets = [...ex.sets];
+      sets.splice(afterSetIdx + 1, 0, {
+        setNumber: 0,
+        setType: 'drop',
+        weight: '',
+        reps: '',
+        rpe: null,
+        completed: false,
+        weightUnit: ex.weightUnit || settings.defaultWeightUnit,
+      });
+      return { ...ex, sets: sets.map((s, i) => ({ ...s, setNumber: i + 1 })) };
+    });
+  }, [updateExercise, settings.defaultWeightUnit]);
+
   const deleteSet = useCallback((exerciseIdx, setIdx) => {
     const ex = workout.exercises[exerciseIdx];
     const deletedSet = ex.sets[setIdx];
@@ -98,12 +104,21 @@ export default function ActiveWorkout() {
         setToast(null);
       },
     });
-  }, [workout, updateExercise, getExName]);
+  }, [workout, updateExercise]);
+
+  const dismissTimer = useCallback((key) => {
+    setActiveTimers(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
 
   const toggleSetComplete = useCallback((exerciseIdx, setIdx) => {
     const ex = workout.exercises[exerciseIdx];
     const set = ex.sets[setIdx];
     const nowComplete = !set.completed;
+    const timerKey = `${exerciseIdx}-${setIdx}`;
 
     updateSet(exerciseIdx, setIdx, { completed: nowComplete });
 
@@ -119,14 +134,13 @@ export default function ActiveWorkout() {
       }
 
       const restTime = ex.restTimerSeconds || settings.defaultRestTimerSeconds;
-      setActiveTimer({ duration: restTime, exerciseIdx, setIdx });
+      setActiveTimers(prev => ({ ...prev, [timerKey]: { duration: restTime } }));
     } else if (!nowComplete) {
-      setActiveTimer(null);
+      dismissTimer(timerKey);
     }
-  }, [workout, updateSet, settings.defaultRestTimerSeconds]);
+  }, [workout, updateSet, settings.defaultRestTimerSeconds, dismissTimer]);
 
   const addExercise = useCallback((ex) => {
-    const prevData = getPreviousDataForExercise(ex.id);
     setActiveWorkout(prev => ({
       ...prev,
       exercises: [...prev.exercises, {
@@ -167,7 +181,7 @@ export default function ActiveWorkout() {
         setToast(null);
       },
     });
-  }, [workout, setActiveWorkout, getExName]);
+  }, [workout, setActiveWorkout]);
 
   const replaceExercise = useCallback((idx, newEx) => {
     const old = workout.exercises[idx];
@@ -226,21 +240,24 @@ export default function ActiveWorkout() {
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <div>
-          <div style={{ fontSize: 17, fontWeight: 600 }}>{workout.templateName || 'Workout'}</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-            {formatTimer(elapsed)}
-          </div>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+        }}>
+          {workout.templateName || 'Workout'}
         </div>
         <button
           onClick={() => setShowFinishConfirm(true)}
           style={{
-            padding: '8px 18px',
-            borderRadius: 8,
+            padding: '8px 20px',
             background: 'var(--accent)',
-            color: 'white',
-            fontSize: 15,
-            fontWeight: 600,
+            color: 'var(--accent-text)',
+            fontSize: 12,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
           }}
         >
           Finish
@@ -248,7 +265,7 @@ export default function ActiveWorkout() {
       </div>
 
       {/* Exercise Cards */}
-      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ padding: '16px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
         {workout.exercises.map((ex, exIdx) => {
           const prevData = getPreviousDataForExercise(ex.exerciseId);
           const isSupersetMember = workout.supersets?.some(ss => ss.exerciseIds.includes(ex.exerciseId));
@@ -259,29 +276,40 @@ export default function ActiveWorkout() {
             <div key={`${ex.exerciseId}-${exIdx}`}>
               {isSupersetMember && isFirstInSuperset && (
                 <div style={{
-                  fontSize: 12,
-                  fontWeight: 600,
+                  fontSize: 10,
+                  fontWeight: 700,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: 'var(--accent-light)',
+                  letterSpacing: '0.12em',
+                  color: 'var(--text-secondary)',
                   marginBottom: 6,
                 }}>
                   Superset
                 </div>
               )}
-              <div className="card" style={{
-                borderLeft: isSupersetMember ? '3px solid var(--accent-light)' : undefined,
+              <div style={{
+                borderLeft: isSupersetMember ? '2px solid var(--text-secondary)' : undefined,
+                paddingLeft: isSupersetMember ? 12 : 0,
               }}>
                 {/* Exercise Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--accent)' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                }}>
+                  <div className="exercise-name" style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}>
                     {getExName(ex.exerciseId)}
                   </div>
                   <button
                     onClick={() => setMenuExerciseIdx(exIdx)}
                     style={{ padding: '4px 8px', color: 'var(--text-muted)', fontSize: 18 }}
                   >
-                    ⋮
+                    &#x22EE;
                   </button>
                 </div>
 
@@ -289,78 +317,110 @@ export default function ActiveWorkout() {
                 {ex.notes?.filter(n => n.type === 'sticky' || n.showOnNextWorkout).map((note, ni) => (
                   <div key={ni} style={{
                     background: 'var(--note-bg)',
-                    borderRadius: 8,
                     padding: '8px 12px',
                     marginBottom: 10,
                     fontSize: 13,
                     lineHeight: 1.4,
-                    display: 'flex',
-                    gap: 6,
+                    borderLeft: '2px solid var(--yellow)',
                   }}>
-                    <span>{note.type === 'sticky' ? '📌' : '📝'}</span>
-                    <span>{note.text}</span>
+                    {note.text}
                   </div>
                 ))}
 
-                {/* Set Header */}
+                {/* Column Header */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '36px 64px 1fr 1fr 40px',
-                  gap: 6,
+                  gridTemplateColumns: '40px 60px 1fr 1fr 40px',
+                  gap: 8,
                   alignItems: 'center',
                   padding: '6px 0',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  color: 'var(--text-muted)',
+                  borderBottom: '1px solid var(--border)',
+                  marginBottom: 2,
                 }}>
-                  <span>Set</span>
-                  <span>Previous</span>
-                  <span>{ex.weightUnit || settings.defaultWeightUnit}</span>
-                  <span>Reps</span>
-                  <span style={{ textAlign: 'center' }}>✓</span>
+                  {['Set', 'Prev', ex.weightUnit || settings.defaultWeightUnit, 'Reps', ''].map((label, i) => (
+                    <span key={i} className="label" style={{ textAlign: 'center', margin: 0 }}>
+                      {label}
+                    </span>
+                  ))}
                 </div>
 
                 {/* Set Rows */}
-                {ex.sets.map((set, setIdx) => {
-                  const prev = prevData?.[setIdx];
-                  const setTypeColors = {
-                    normal: 'var(--text)',
-                    'warm-up': 'var(--yellow)',
-                    failure: 'var(--red)',
-                    drop: 'var(--green)',
-                  };
+                {(() => {
+                  let mainSetNum = 0;
+                  return ex.sets.map((set, setIdx) => {
+                    const isDrop = set.setType === 'drop';
+                    if (!isDrop) mainSetNum++;
+                    const displayNum = mainSetNum;
+                    const prev = prevData?.[setIdx];
+                    const setTypeColors = {
+                      normal: 'var(--text)',
+                      'warm-up': 'var(--yellow)',
+                      failure: 'var(--red)',
+                      drop: 'var(--green)',
+                    };
 
-                  return (
-                    <div key={setIdx}>
-                      <SetRow
-                        set={set}
-                        setIdx={setIdx}
-                        prev={prev}
-                        setTypeColor={setTypeColors[set.setType]}
-                        onUpdateSet={(updates) => updateSet(exIdx, setIdx, updates)}
-                        onToggleComplete={() => toggleSetComplete(exIdx, setIdx)}
-                        onDelete={() => deleteSet(exIdx, setIdx)}
-                      />
-                      {activeTimer && activeTimer.exerciseIdx === exIdx && activeTimer.setIdx === setIdx && set.completed && (
-                        <RestTimer
-                          duration={activeTimer.duration}
-                          onDismiss={() => setActiveTimer(null)}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+                    const timerKey = `${exIdx}-${setIdx}`;
+                    const timerActive = set.completed && !!activeTimers[timerKey];
+                    const restDuration = ex.restTimerSeconds || settings.defaultRestTimerSeconds;
+                    const isLastDropInGroup = isDrop &&
+                      (setIdx === ex.sets.length - 1 || ex.sets[setIdx + 1]?.setType !== 'drop');
+
+                    return (
+                      <div key={setIdx}>
+                        <div style={isDrop ? {
+                          marginLeft: 20,
+                          borderLeft: '2px solid var(--green)',
+                          paddingLeft: 12,
+                        } : undefined}>
+                          <SetRow
+                            set={set}
+                            setIdx={setIdx}
+                            displayNum={displayNum}
+                            prev={prev}
+                            setTypeColor={setTypeColors[set.setType]}
+                            onUpdateSet={(updates) => updateSet(exIdx, setIdx, updates)}
+                            onToggleComplete={() => toggleSetComplete(exIdx, setIdx)}
+                            onDelete={() => deleteSet(exIdx, setIdx)}
+                          />
+                          <RestTimer
+                            key={`timer-${timerKey}`}
+                            duration={restDuration}
+                            active={timerActive}
+                            onDismiss={() => dismissTimer(timerKey)}
+                            onDurationChange={(d) => updateExercise(exIdx, ex => ({ ...ex, restTimerSeconds: d }))}
+                          />
+                        </div>
+                        {isLastDropInGroup && (
+                          <button
+                            onClick={() => addDropSet(exIdx, setIdx)}
+                            style={{
+                              marginLeft: 34,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.06em',
+                              color: 'var(--green)',
+                              padding: '8px 0',
+                            }}
+                          >
+                            + Drop Set
+                          </button>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
 
                 {/* Add Set */}
                 <button
                   onClick={() => addSet(exIdx)}
                   style={{
-                    fontSize: 14,
-                    color: 'var(--accent)',
-                    fontWeight: 500,
-                    padding: '10px 0 2px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: 'var(--text-secondary)',
+                    padding: '12px 0 4px',
                     width: '100%',
                     textAlign: 'center',
                   }}
@@ -372,31 +432,28 @@ export default function ActiveWorkout() {
           );
         })}
 
-        {/* Add Exercise */}
         <button
           onClick={() => setShowExercisePicker(true)}
           className="btn"
           style={{
             width: '100%',
-            background: 'var(--surface)',
+            background: 'transparent',
             border: '1px solid var(--border)',
-            color: 'var(--accent)',
+            color: 'var(--text-secondary)',
           }}
         >
           + Add Exercise
         </button>
 
-        {/* Cancel Workout */}
         <button
           onClick={() => setShowCancelConfirm(true)}
           className="btn btn-danger"
-          style={{ width: '100%', marginTop: 16 }}
+          style={{ width: '100%', marginTop: 8 }}
         >
           Cancel Workout
         </button>
       </div>
 
-      {/* Modals */}
       {showExercisePicker && (
         <ExercisePicker
           onSelect={addExercise}
@@ -478,11 +535,12 @@ export default function ActiveWorkout() {
   );
 }
 
-function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete, onDelete }) {
+function SetRow({ set, setIdx, displayNum, prev, setTypeColor, onUpdateSet, onToggleComplete, onDelete }) {
   const [swiping, setSwiping] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const startX = useRef(0);
   const [showTypeMenu, setShowTypeMenu] = useState(false);
+  const [typeMenuPos, setTypeMenuPos] = useState({ top: 0, left: 0 });
   const [showRpe, setShowRpe] = useState(false);
 
   const handleTouchStart = (e) => {
@@ -497,21 +555,23 @@ function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete
   };
 
   const handleTouchEnd = () => {
-    if (swipeX > 60) {
-      onDelete();
-    }
+    if (swipeX > 60) onDelete();
     setSwipeX(0);
     setSwiping(false);
   };
 
   const setTypes = [
-    { value: 'normal', label: 'Normal', color: 'var(--text)' },
-    { value: 'warm-up', label: 'Warm-up', color: 'var(--yellow)' },
-    { value: 'failure', label: 'Failure', color: 'var(--red)' },
-    { value: 'drop', label: 'Drop Set', color: 'var(--green)' },
+    { value: 'normal', label: 'Normal', abbr: null, color: 'var(--text)' },
+    { value: 'warm-up', label: 'Warm-up', abbr: 'W', color: 'var(--yellow)' },
+    { value: 'failure', label: 'Failure', abbr: 'F', color: 'var(--red)' },
+    { value: 'drop', label: 'Drop Set', abbr: 'D', color: 'var(--green)' },
   ];
 
   const prevText = prev ? `${prev.weight}×${prev.reps}` : '—';
+
+  const setLabel = set.setType === 'normal'
+    ? String(displayNum)
+    : setTypes.find(t => t.value === set.setType)?.abbr || String(displayNum);
 
   return (
     <>
@@ -519,25 +579,13 @@ function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: 8,
-        }}
+        style={{ position: 'relative', overflow: 'hidden' }}
       >
-        {/* Delete zone — only visible during swipe */}
         {swipeX > 0 && (
           <div style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: 80,
-            background: 'var(--red)',
-            display: 'flex',
-            alignItems: 'center',
+            position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
+            background: 'var(--red)', display: 'flex', alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: 8,
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
               <polyline points="3 6 5 6 21 6"/>
@@ -550,35 +598,49 @@ function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete
           onClick={() => set.completed && setShowRpe(!showRpe)}
           style={{
             display: 'grid',
-            gridTemplateColumns: '36px 64px 1fr 1fr 40px',
-            gap: 6,
+            gridTemplateColumns: '40px 60px 1fr 1fr 40px',
+            gap: 8,
             alignItems: 'center',
-            padding: '8px 0',
+            padding: '6px 0',
             minHeight: 44,
-            background: set.completed ? 'rgba(34, 197, 94, 0.06)' : 'var(--surface)',
-            borderRadius: 8,
+            background: set.completed ? 'var(--green-dim)' : 'transparent',
+            borderBottom: '1px solid var(--border)',
             transform: `translateX(-${swipeX}px)`,
             transition: swiping ? 'none' : 'transform 0.2s',
             position: 'relative',
             zIndex: 1,
           }}
         >
-          {/* Set Number / Type */}
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowTypeMenu(!showTypeMenu); }}
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: setTypeColor,
-              textAlign: 'center',
-              padding: '4px 0',
-            }}
-          >
-            {set.setType === 'warm-up' ? 'W' : set.setType === 'failure' ? 'F' : set.setType === 'drop' ? 'D' : setIdx + 1}
-          </button>
+          {/* Set Number */}
+          <div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                setTypeMenuPos({ top: rect.top, left: rect.right + 4 });
+                setShowTypeMenu(!showTypeMenu);
+              }}
+              style={{
+                width: '100%',
+                fontSize: 14,
+                fontWeight: 700,
+                color: setTypeColor,
+                textAlign: 'center',
+                padding: '6px 0',
+              }}
+            >
+              {setLabel}
+            </button>
+          </div>
 
           {/* Previous */}
-          <span style={{ fontSize: 13, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{
+            fontSize: 12,
+            color: 'var(--text-muted)',
+            fontVariantNumeric: 'tabular-nums',
+            textAlign: 'center',
+            display: 'block',
+          }}>
             {prevText}
           </span>
 
@@ -587,13 +649,12 @@ function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete
             type="number"
             inputMode="decimal"
             value={set.weight}
-            placeholder={prev?.weight?.toString() || ''}
+            placeholder={prev?.weight?.toString() || '—'}
             onChange={e => onUpdateSet({ weight: e.target.value })}
             style={{
               height: 36,
-              background: 'var(--bg)',
+              background: 'var(--surface)',
               border: '1px solid var(--border)',
-              borderRadius: 8,
               textAlign: 'center',
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
@@ -606,13 +667,12 @@ function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete
             type="number"
             inputMode="numeric"
             value={set.reps}
-            placeholder={prev?.reps?.toString() || ''}
+            placeholder={prev?.reps?.toString() || '—'}
             onChange={e => onUpdateSet({ reps: e.target.value })}
             style={{
               height: 36,
-              background: 'var(--bg)',
+              background: 'var(--surface)',
               border: '1px solid var(--border)',
-              borderRadius: 8,
               textAlign: 'center',
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
@@ -621,57 +681,75 @@ function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete
           />
 
           {/* Checkbox */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleComplete(); }}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              border: `2px solid ${set.completed ? 'var(--green)' : 'var(--border)'}`,
-              background: set.completed ? 'var(--green)' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
-              transition: 'all 0.15s',
-              flexShrink: 0,
-            }}
-          >
-            {set.completed && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            )}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleComplete(); }}
+              style={{
+                width: 28,
+                height: 28,
+                border: `2px solid ${set.completed ? 'var(--green)' : 'var(--border)'}`,
+                background: set.completed ? 'var(--green)' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s',
+                flexShrink: 0,
+              }}
+            >
+              {set.completed && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Set Type Menu */}
+      {/* Set Type Popover */}
       {showTypeMenu && (
-        <div style={{
-          display: 'flex',
-          gap: 6,
-          padding: '6px 0',
-          flexWrap: 'wrap',
-        }}>
-          {setTypes.map(t => (
-            <button
-              key={t.value}
-              onClick={() => { onUpdateSet({ setType: t.value }); setShowTypeMenu(false); }}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                color: t.color,
-                background: set.setType === t.value ? 'rgba(255,255,255,0.08)' : 'transparent',
-                border: `1px solid ${set.setType === t.value ? t.color : 'var(--border)'}`,
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+            onClick={() => setShowTypeMenu(false)}
+          />
+          <div style={{
+            position: 'fixed',
+            top: typeMenuPos.top,
+            left: typeMenuPos.left,
+            zIndex: 100,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow)',
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: 120,
+          }}>
+            {setTypes.map(t => (
+              <button
+                key={t.value}
+                onClick={() => {
+                  onUpdateSet({ setType: t.value });
+                  setShowTypeMenu(false);
+                }}
+                style={{
+                  padding: '10px 12px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: t.color,
+                  background: set.setType === t.value ? 'var(--highlight)' : 'transparent',
+                  textAlign: 'left',
+                  whiteSpace: 'nowrap',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {/* RPE Selector */}
@@ -683,20 +761,16 @@ function SetRow({ set, setIdx, prev, setTypeColor, onUpdateSet, onToggleComplete
           padding: '6px 0',
           overflowX: 'auto',
         }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>RPE:</span>
+          <span className="label" style={{ flexShrink: 0, margin: 0 }}>RPE:</span>
           {Array.from({ length: 10 }, (_, i) => i + 1).map(val => (
             <button
               key={val}
               onClick={() => { onUpdateSet({ rpe: val }); setShowRpe(false); }}
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                flexShrink: 0,
-                background: set.rpe === val ? 'var(--accent)' : 'var(--bg)',
-                color: set.rpe === val ? 'white' : 'var(--text-muted)',
+                width: 32, height: 32,
+                fontSize: 13, fontWeight: 600, flexShrink: 0,
+                background: set.rpe === val ? 'var(--accent)' : 'var(--surface)',
+                color: set.rpe === val ? 'var(--bg)' : 'var(--text-muted)',
                 border: `1px solid ${set.rpe === val ? 'var(--accent)' : 'var(--border)'}`,
               }}
             >

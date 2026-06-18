@@ -38,30 +38,30 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
     {
       group: 'Notes',
       items: [
-        { label: 'Add Note', icon: '📝', action: () => { setNoteType('regular'); setSubMenu('note'); } },
-        { label: 'Add Sticky Note', icon: '📌', action: () => { setNoteType('sticky'); setSubMenu('note'); } },
+        { label: 'Add Note', icon: '✎', action: () => { setNoteType('regular'); setSubMenu('note'); } },
+        { label: 'Add Sticky Note', icon: '◈', action: () => { setNoteType('sticky'); setSubMenu('note'); } },
       ],
     },
     {
       group: 'Actions',
       items: [
-        { label: 'Replace Exercise', icon: '🔄', action: () => {
+        { label: 'Replace Exercise', icon: '↻', action: () => {
           if (loggedSets > 0) {
             setShowReplaceConfirm(true);
           } else {
             setShowReplacePicker(true);
           }
         }},
-        { label: 'Create Superset', icon: '🔗', action: () => setSubMenu('superset') },
-        { label: 'Remove Exercise', icon: '🗑️', color: 'var(--red)', action: () => setShowRemoveConfirm(true) },
+        { label: 'Create Superset', icon: '↔', action: () => setSubMenu('superset') },
+        { label: 'Remove Exercise', icon: '✕', color: 'var(--red)', action: () => setShowRemoveConfirm(true) },
       ],
     },
     {
       group: 'Preferences',
       items: [
-        { label: `Weight Unit: ${exercise.weightUnit || settings.defaultWeightUnit}`, icon: '⚖️', action: () => setSubMenu('unit') },
-        { label: 'Bar Type', icon: '🏋️', action: () => setSubMenu('barType') },
-        { label: 'Rest Timer', icon: '⏱️', action: () => setSubMenu('restTimer') },
+        { label: `Weight: ${exercise.weightUnit || settings.defaultWeightUnit}`, icon: '⚖', action: () => setSubMenu('unit') },
+        { label: 'Bar Type', icon: '≡', action: () => setSubMenu('barType') },
+        { label: 'Rest Timer', icon: '⏱', action: () => setSubMenu('restTimer') },
       ],
     },
   ];
@@ -69,9 +69,26 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600 }}>{getExName(exercise.exerciseId)}</h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)', fontSize: 28, lineHeight: 1, padding: 4 }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16,
+        }}>
+          <h3 style={{
+            fontSize: 14,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+          }}>
+            {getExName(exercise.exerciseId)}
+          </h3>
+          <button onClick={onClose} style={{
+            color: 'var(--text-muted)',
+            fontSize: 28,
+            lineHeight: 1,
+            padding: 4,
+          }}>
             &times;
           </button>
         </div>
@@ -80,14 +97,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
           <div>
             {menuItems.map(group => (
               <div key={group.group}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'var(--text-muted)',
-                  padding: '12px 0 4px',
-                }}>
+                <div className="label" style={{ padding: '12px 0 4px' }}>
                   {group.group}
                 </div>
                 {group.items.map(item => (
@@ -101,12 +111,15 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
                       width: '100%',
                       textAlign: 'left',
                       padding: '14px 4px',
-                      fontSize: 15,
+                      fontSize: 14,
+                      fontWeight: 600,
                       color: item.color || 'var(--text)',
                       borderBottom: '1px solid var(--border)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
                     }}
                   >
-                    <span style={{ fontSize: 18 }}>{item.icon}</span>
+                    <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{item.icon}</span>
                     {item.label}
                   </button>
                 ))}
@@ -118,7 +131,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
         {/* Note Sub-menu */}
         {subMenu === 'note' && (
           <div>
-            <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>
               {noteType === 'sticky' ? 'This note will appear on all future workouts.' : 'This note will appear on the next workout only.'}
             </div>
             <textarea
@@ -131,7 +144,6 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
                 minHeight: 80,
                 background: 'var(--bg)',
                 border: '1px solid var(--border)',
-                borderRadius: 10,
                 padding: 12,
                 fontSize: 15,
                 color: 'var(--text)',
@@ -139,7 +151,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
               }}
             />
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-              <button className="btn" onClick={() => setSubMenu(null)} style={{ flex: 1, background: 'var(--bg)', border: '1px solid var(--border)' }}>
+              <button className="btn" onClick={() => setSubMenu(null)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)' }}>
                 Back
               </button>
               <button
@@ -164,7 +176,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
 
         {/* Weight Unit Sub-menu */}
         {subMenu === 'unit' && (
-          <div>
+          <div style={{ borderTop: '1px solid var(--border)' }}>
             {['lbs', 'kg'].map(unit => (
               <button
                 key={unit}
@@ -174,13 +186,15 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
                   width: '100%',
                   textAlign: 'left',
                   padding: '14px 4px',
-                  fontSize: 15,
-                  color: (exercise.weightUnit || settings.defaultWeightUnit) === unit ? 'var(--accent)' : 'var(--text)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: (exercise.weightUnit || settings.defaultWeightUnit) === unit ? 'var(--accent)' : 'var(--text-muted)',
                   borderBottom: '1px solid var(--border)',
-                  fontWeight: (exercise.weightUnit || settings.defaultWeightUnit) === unit ? 600 : 400,
                 }}
               >
-                {unit.toUpperCase()}
+                {unit}
                 {(exercise.weightUnit || settings.defaultWeightUnit) === unit && ' ✓'}
               </button>
             ))}
@@ -189,7 +203,7 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
 
         {/* Bar Type Sub-menu */}
         {subMenu === 'barType' && (
-          <div>
+          <div style={{ borderTop: '1px solid var(--border)' }}>
             {BAR_TYPES.map(bt => (
               <button
                 key={bt.label}
@@ -199,10 +213,10 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
                   width: '100%',
                   textAlign: 'left',
                   padding: '14px 4px',
-                  fontSize: 15,
-                  color: exercise.barType === bt.value ? 'var(--accent)' : 'var(--text)',
-                  borderBottom: '1px solid var(--border)',
+                  fontSize: 14,
                   fontWeight: exercise.barType === bt.value ? 600 : 400,
+                  color: exercise.barType === bt.value ? 'var(--accent)' : 'var(--text-secondary)',
+                  borderBottom: '1px solid var(--border)',
                 }}
               >
                 {bt.label}
@@ -215,9 +229,15 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
         {/* Rest Timer Sub-menu */}
         {subMenu === 'restTimer' && (
           <div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 20,
+            }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Min</div>
+                <div className="label" style={{ marginBottom: 4 }}>Min</div>
                 <input
                   type="number"
                   value={restMinutes}
@@ -228,15 +248,15 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
                     textAlign: 'center',
                     background: 'var(--bg)',
                     border: '1px solid var(--border)',
-                    borderRadius: 8,
                     fontSize: 18,
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 />
               </div>
               <span style={{ fontSize: 24, fontWeight: 300, color: 'var(--text-muted)', paddingTop: 20 }}>:</span>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Sec</div>
+                <div className="label" style={{ marginBottom: 4 }}>Sec</div>
                 <input
                   type="number"
                   value={restSeconds}
@@ -247,9 +267,9 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
                     textAlign: 'center',
                     background: 'var(--bg)',
                     border: '1px solid var(--border)',
-                    borderRadius: 8,
                     fontSize: 18,
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 />
               </div>
@@ -267,52 +287,57 @@ export default function ExerciseMenu({ exercise, exerciseIdx, settings, onClose,
         {/* Superset Sub-menu */}
         {subMenu === 'superset' && (
           <div>
-            <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 12 }}>
+            <div style={{
+              fontSize: 13,
+              color: 'var(--text-muted)',
+              marginBottom: 12,
+            }}>
               Select exercises to include in the superset:
             </div>
-            {activeWorkout.exercises.map((ex, i) => {
-              const selected = supersetSelection.includes(ex.exerciseId);
-              return (
-                <button
-                  key={i}
-                  onClick={() => {
-                    if (ex.exerciseId === exercise.exerciseId) return;
-                    setSupersetSelection(prev =>
-                      selected ? prev.filter(id => id !== ex.exerciseId) : [...prev, ex.exerciseId]
-                    );
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '12px 4px',
-                    borderBottom: '1px solid var(--border)',
-                    opacity: ex.exerciseId === exercise.exerciseId ? 0.5 : 1,
-                  }}
-                >
-                  <div style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 6,
-                    border: `2px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
-                    background: selected ? 'var(--accent)' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    {selected && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    )}
-                  </div>
-                  <span style={{ fontSize: 15, color: 'var(--text)' }}>{getExName(ex.exerciseId)}</span>
-                </button>
-              );
-            })}
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              {activeWorkout.exercises.map((ex, i) => {
+                const selected = supersetSelection.includes(ex.exerciseId);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (ex.exerciseId === exercise.exerciseId) return;
+                      setSupersetSelection(prev =>
+                        selected ? prev.filter(id => id !== ex.exerciseId) : [...prev, ex.exerciseId]
+                      );
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '12px 4px',
+                      borderBottom: '1px solid var(--border)',
+                      opacity: ex.exerciseId === exercise.exerciseId ? 0.5 : 1,
+                    }}
+                  >
+                    <div style={{
+                      width: 22,
+                      height: 22,
+                      border: `2px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                      background: selected ? 'var(--accent)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {selected && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="3" strokeLinecap="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 14 }}>{getExName(ex.exerciseId)}</span>
+                  </button>
+                );
+              })}
+            </div>
             <button
               className="btn btn-primary"
               style={{ width: '100%', marginTop: 16 }}

@@ -1,18 +1,25 @@
 :root {
-  --bg: #0D0D0F;
-  --surface: #1A1A1E;
-  --border: #2A2A2E;
+  --bg: #0F0F0F;
+  --surface: #1A1A1A;
+  --surface-hover: #222222;
+  --border: #2D2D2D;
   --text: #FFFFFF;
-  --text-muted: #8A8A8E;
-  --accent: #7C3AED;
-  --accent-light: #A855F7;
+  --text-secondary: #8B8B8B;
+  --text-muted: #555555;
+  --accent: #FF574D;
+  --accent-text: #FFFFFF;
+  --accent-dim: rgba(255, 87, 77, 0.12);
   --yellow: #EAB308;
   --red: #EF4444;
-  --green: #22C55E;
-  --note-bg: #423006;
-  --ghost: rgba(255, 255, 255, 0.25);
+  --green: #00E676;
+  --note-bg: #1A1A0A;
+  --ghost: rgba(255, 255, 255, 0.08);
+  --highlight: rgba(255, 255, 255, 0.04);
+  --green-dim: rgba(0, 230, 118, 0.04);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   --nav-height: 56px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --font-serif: "Playfair Display", Georgia, serif;
 }
 
 *, *::before, *::after {
@@ -25,7 +32,7 @@ html, body, #root {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
@@ -70,7 +77,7 @@ a {
 
 .screen {
   padding: 16px;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 56px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
   padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 24px);
   min-height: 100dvh;
   overflow-y: auto;
@@ -78,19 +85,28 @@ a {
 }
 
 .section-header {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   margin-bottom: 12px;
 }
 
 .card {
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px;
   border: 1px solid var(--border);
+}
+
+.exercise-name {
+  transition: opacity 0.1s ease;
+}
+
+.card:active .exercise-name {
+  opacity: 0.4;
+  transition: opacity 0.15s ease 0.3s;
 }
 
 .btn {
@@ -100,9 +116,11 @@ a {
   gap: 8px;
   height: 48px;
   padding: 0 24px;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 0;
+  font-size: 14px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   transition: opacity 0.15s, transform 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -114,7 +132,7 @@ a {
 
 .btn-primary {
   background: var(--accent);
-  color: white;
+  color: var(--accent-text);
 }
 
 .btn-danger {
@@ -125,14 +143,14 @@ a {
 
 .btn-ghost {
   background: transparent;
-  color: var(--accent);
+  color: var(--text);
 }
 
 .input-field {
   height: 44px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 0 14px;
   font-size: 16px;
   color: var(--text);
@@ -151,17 +169,17 @@ a {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   z-index: 100;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: fadeIn 0.15s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .modal-content {
   background: var(--surface);
-  border-radius: 16px 16px 0 0;
+  border-radius: 0;
   padding: 24px;
   padding-bottom: calc(24px + var(--safe-bottom));
   width: 100%;
@@ -169,6 +187,7 @@ a {
   max-height: 85dvh;
   overflow-y: auto;
   animation: slideUp 0.25s ease-out;
+  border-top: 1px solid var(--border);
 }
 
 @keyframes fadeIn {
@@ -188,12 +207,13 @@ a {
 
 .toast {
   position: fixed;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+  bottom: calc(var(--safe-bottom) + 16px);
   left: 16px;
   right: 16px;
-  background: #333;
+  background: var(--surface);
+  border: 1px solid var(--border);
   color: white;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 12px 16px;
   display: flex;
   align-items: center;
@@ -207,7 +227,7 @@ a {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
+  height: 2px;
   background: var(--accent);
   animation: deplete 5s linear forwards;
 }
@@ -231,5 +251,36 @@ a {
 .empty-state svg {
   width: 48px;
   height: 48px;
-  opacity: 0.4;
+  opacity: 0.3;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  width: 100%;
+}
+
+.display-number {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.serif {
+  font-family: var(--font-serif);
+}
+
+.serif-italic {
+  font-family: var(--font-serif);
+  font-style: italic;
 }

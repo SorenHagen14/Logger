@@ -61,14 +61,38 @@ export default function WorkoutSummary({ workout, onDone }) {
     sum + ex.sets.filter(s => s.completed).length, 0
   );
 
+  const totalVolume = workout.exercises.reduce((sum, ex) =>
+    sum + ex.sets.filter(s => s.completed).reduce((sSum, s) =>
+      sSum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0
+    ), 0
+  );
+
+  const stats = [
+    { label: 'Duration', value: formatDuration(workout.startedAt, workout.completedAt) },
+    { label: 'Sets', value: completedSets },
+    { label: 'Volume', value: totalVolume.toLocaleString() + ' lbs' },
+  ];
+
   return (
-    <div className="screen" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}>
-      <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>💪</div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
-          {workout.templateName || 'Workout'} Complete!
+    <div style={{
+      padding: '16px',
+      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
+      paddingBottom: '24px',
+      minHeight: '100dvh',
+    }}>
+      {/* Hero */}
+      <div style={{ marginBottom: 40 }}>
+        <div className="label" style={{ marginBottom: 8, color: 'var(--accent)' }}>Complete</div>
+        <h1 style={{
+          fontSize: 40,
+          fontWeight: 800,
+          letterSpacing: '-0.03em',
+          lineHeight: 1.1,
+          marginBottom: 4,
+        }}>
+          {workout.templateName || 'Workout'}
         </h1>
-        <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           {formatDate(workout.completedAt)}
         </div>
       </div>
@@ -77,30 +101,57 @@ export default function WorkoutSummary({ workout, onDone }) {
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr 1fr',
-        gap: 12,
-        marginBottom: 24,
+        gap: 1,
+        background: 'var(--border)',
+        marginBottom: 32,
+        border: '1px solid var(--border)',
       }}>
-        {[
-          { label: 'Duration', value: formatDuration(workout.startedAt, workout.completedAt) },
-          { label: 'Exercises', value: workout.exercises.length },
-          { label: 'Sets', value: completedSets },
-        ].map(stat => (
-          <div key={stat.label} className="card" style={{ textAlign: 'center', padding: 14 }}>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{stat.value}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{stat.label}</div>
+        {stats.map(stat => (
+          <div key={stat.label} style={{
+            background: 'var(--surface)',
+            textAlign: 'center',
+            padding: '20px 8px',
+          }}>
+            <div style={{
+              fontSize: 24,
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
+              lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+              marginBottom: 6,
+            }}>
+              {stat.value}
+            </div>
+            <div className="label" style={{ margin: 0 }}>{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* PRs */}
       {prs.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div className="section-header">Personal Records 🏆</div>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ marginBottom: 32 }}>
+          <div className="label" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'var(--accent)', fontSize: 14 }}>&#x2726;</span>
+            Personal Records
+          </div>
+          <div style={{ borderTop: '1px solid var(--border)' }}>
             {prs.map((pr, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div key={i} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px 0',
+                borderBottom: '1px solid var(--border)',
+              }}>
                 <span style={{ fontSize: 14 }}>{pr.exercise}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--yellow)' }}>{pr.value}</span>
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: 'var(--green)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {pr.value}
+                </span>
               </div>
             ))}
           </div>
@@ -108,24 +159,35 @@ export default function WorkoutSummary({ workout, onDone }) {
       )}
 
       {/* Exercise Breakdown */}
-      <div className="section-header">Exercises</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+      <div className="label" style={{ marginBottom: 12 }}>Exercises</div>
+      <div style={{ marginBottom: 32 }}>
         {workout.exercises.map((ex, i) => (
-          <div key={i} className="card">
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: 'var(--accent)' }}>
+          <div key={i} style={{
+            borderTop: i === 0 ? '1px solid var(--border)' : 'none',
+            borderBottom: '1px solid var(--border)',
+            padding: '14px 0',
+          }}>
+            <div style={{
+              fontSize: 13,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 8,
+            }}>
               {getExName(ex.exerciseId)}
             </div>
             {ex.sets.filter(s => s.completed).map((s, j) => (
               <div key={j} style={{
                 display: 'flex',
                 gap: 8,
-                fontSize: 14,
-                color: 'var(--text-muted)',
-                padding: '3px 0',
+                fontSize: 13,
+                color: 'var(--text-secondary)',
+                padding: '2px 0',
+                fontVariantNumeric: 'tabular-nums',
               }}>
-                <span style={{ width: 24, color: 'var(--text-muted)' }}>{j + 1}.</span>
+                <span style={{ width: 20, color: 'var(--text-muted)' }}>{j + 1}</span>
                 <span>{s.weight || 0} {s.weightUnit || 'lbs'} × {s.reps || 0}</span>
-                {s.rpe && <span style={{ color: 'var(--accent-light)' }}>RPE {s.rpe}</span>}
+                {s.rpe && <span style={{ color: 'var(--text-muted)' }}>RPE {s.rpe}</span>}
               </div>
             ))}
           </div>
@@ -134,19 +196,21 @@ export default function WorkoutSummary({ workout, onDone }) {
 
       {/* Save Order Toggle */}
       {workout.orderChanged && (
-        <div className="card" style={{
+        <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          padding: '16px 0',
+          borderTop: '1px solid var(--border)',
+          borderBottom: '1px solid var(--border)',
           marginBottom: 24,
         }}>
-          <span style={{ fontSize: 14 }}>Save new exercise order to template?</span>
+          <span style={{ fontSize: 14 }}>Save new exercise order?</span>
           <button
             onClick={() => setSaveOrder(!saveOrder)}
             style={{
               width: 48,
               height: 28,
-              borderRadius: 14,
               background: saveOrder ? 'var(--accent)' : 'var(--border)',
               position: 'relative',
               transition: 'background 0.2s',
@@ -155,12 +219,11 @@ export default function WorkoutSummary({ workout, onDone }) {
             <div style={{
               width: 22,
               height: 22,
-              borderRadius: 11,
-              background: 'white',
+              background: saveOrder ? 'var(--accent-text)' : 'var(--text-muted)',
               position: 'absolute',
               top: 3,
               left: saveOrder ? 23 : 3,
-              transition: 'left 0.2s',
+              transition: 'left 0.2s, background 0.2s',
             }} />
           </button>
         </div>

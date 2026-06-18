@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { getSettings, saveSettings } from '../data/db.js';
+import { AppContext } from '../App.jsx';
+import StrongImport from '../components/StrongImport.jsx';
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState(getSettings());
+  const [showStrongImport, setShowStrongImport] = useState(false);
+  const ctx = useContext(AppContext);
 
   useEffect(() => {
     saveSettings(settings);
@@ -13,14 +17,27 @@ export default function SettingsScreen() {
 
   return (
     <div className="screen">
-      <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Settings</h1>
+      <h1 style={{
+        fontSize: 40,
+        fontWeight: 800,
+        letterSpacing: '-0.03em',
+        textTransform: 'uppercase',
+        marginBottom: 32,
+      }}>
+        Settings
+      </h1>
 
       {/* Rest Timer */}
-      <div className="card" style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Default Rest Timer</div>
+      <div style={{
+        borderTop: '1px solid var(--border)',
+        borderBottom: '1px solid var(--border)',
+        padding: '20px 0',
+        marginBottom: 24,
+      }}>
+        <div className="label" style={{ marginBottom: 14 }}>Default Rest Timer</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Min</div>
+            <div className="label" style={{ marginBottom: 4 }}>Min</div>
             <input
               type="number"
               value={restMinutes}
@@ -32,17 +49,17 @@ export default function SettingsScreen() {
                 width: 56,
                 height: 44,
                 textAlign: 'center',
-                background: 'var(--bg)',
+                background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                borderRadius: 8,
                 fontSize: 18,
-                fontWeight: 600,
+                fontWeight: 700,
+                fontVariantNumeric: 'tabular-nums',
               }}
             />
           </div>
           <span style={{ fontSize: 24, fontWeight: 300, color: 'var(--text-muted)', paddingTop: 20 }}>:</span>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Sec</div>
+            <div className="label" style={{ marginBottom: 4 }}>Sec</div>
             <input
               type="number"
               value={restSeconds}
@@ -54,11 +71,11 @@ export default function SettingsScreen() {
                 width: 56,
                 height: 44,
                 textAlign: 'center',
-                background: 'var(--bg)',
+                background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                borderRadius: 8,
                 fontSize: 18,
-                fontWeight: 600,
+                fontWeight: 700,
+                fontVariantNumeric: 'tabular-nums',
               }}
             />
           </div>
@@ -66,9 +83,13 @@ export default function SettingsScreen() {
       </div>
 
       {/* Weight Unit */}
-      <div className="card" style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Default Weight Unit</div>
-        <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{
+        borderBottom: '1px solid var(--border)',
+        padding: '0 0 24px',
+        marginBottom: 24,
+      }}>
+        <div className="label" style={{ marginBottom: 14 }}>Default Weight Unit</div>
+        <div style={{ display: 'flex', gap: 1, background: 'var(--border)' }}>
           {['lbs', 'kg'].map(unit => (
             <button
               key={unit}
@@ -76,24 +97,50 @@ export default function SettingsScreen() {
               style={{
                 flex: 1,
                 height: 44,
-                borderRadius: 8,
-                fontSize: 15,
-                fontWeight: 600,
-                background: settings.defaultWeightUnit === unit ? 'var(--accent)' : 'var(--bg)',
-                color: settings.defaultWeightUnit === unit ? 'white' : 'var(--text-muted)',
-                border: `1px solid ${settings.defaultWeightUnit === unit ? 'var(--accent)' : 'var(--border)'}`,
+                fontSize: 13,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                background: settings.defaultWeightUnit === unit ? 'var(--accent)' : 'var(--surface)',
+                color: settings.defaultWeightUnit === unit ? 'var(--accent-text)' : 'var(--text-muted)',
                 transition: 'all 0.15s',
               }}
             >
-              {unit.toUpperCase()}
+              {unit}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Import from Strong */}
+      <div style={{
+        borderBottom: '1px solid var(--border)',
+        padding: '0 0 24px',
+        marginBottom: 24,
+      }}>
+        <div className="label" style={{ marginBottom: 14 }}>Import</div>
+        <button
+          onClick={() => setShowStrongImport(true)}
+          style={{
+            width: '100%',
+            padding: '14px',
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            background: 'transparent',
+            color: 'var(--text)',
+            border: '1px solid var(--border)',
+            textAlign: 'center',
+          }}
+        >
+          Import from Strong
+        </button>
+      </div>
+
       {/* Data Management */}
-      <div className="card">
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Data</div>
+      <div style={{ marginBottom: 24 }}>
+        <div className="label" style={{ marginBottom: 14 }}>Data</div>
         <button
           onClick={() => {
             const data = {
@@ -112,14 +159,16 @@ export default function SettingsScreen() {
           }}
           style={{
             width: '100%',
-            padding: '12px',
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 500,
-            background: 'var(--bg)',
-            color: 'var(--accent)',
+            padding: '14px',
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            background: 'transparent',
+            color: 'var(--text)',
             border: '1px solid var(--border)',
             marginBottom: 8,
+            textAlign: 'center',
           }}
         >
           Export Backup
@@ -128,12 +177,13 @@ export default function SettingsScreen() {
           style={{
             display: 'block',
             width: '100%',
-            padding: '12px',
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 500,
-            background: 'var(--bg)',
-            color: 'var(--accent)',
+            padding: '14px',
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            background: 'transparent',
+            color: 'var(--text)',
             border: '1px solid var(--border)',
             textAlign: 'center',
             cursor: 'pointer',
@@ -166,9 +216,23 @@ export default function SettingsScreen() {
         </label>
       </div>
 
-      <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+      <div style={{
+        textAlign: 'center',
+        padding: '32px 0',
+        color: 'var(--text-muted)',
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+      }}>
         Workout Logger v1.0
       </div>
+
+      {showStrongImport && (
+        <StrongImport
+          onClose={() => setShowStrongImport(false)}
+          onImported={() => ctx.forceUpdate()}
+        />
+      )}
     </div>
   );
 }

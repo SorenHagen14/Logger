@@ -4,6 +4,7 @@ import {
   getSettings,
   getTemplates,
   saveTemplate,
+  deleteTemplate,
   saveWorkout,
   getActiveWorkout,
   saveActiveWorkout,
@@ -16,6 +17,8 @@ import ExercisesScreen from './screens/ExercisesScreen.jsx';
 import SettingsScreen from './screens/SettingsScreen.jsx';
 import ActiveWorkout from './screens/ActiveWorkout.jsx';
 import WorkoutSummary from './screens/WorkoutSummary.jsx';
+import TemplateEditor from './screens/TemplateEditor.jsx';
+import WorkoutDetail from './screens/WorkoutDetail.jsx';
 
 export const AppContext = createContext(null);
 
@@ -23,6 +26,9 @@ export default function App() {
   const [screen, setScreen] = useState('home');
   const [activeWorkout, setActiveWorkout] = useState(() => getActiveWorkout());
   const [completedWorkout, setCompletedWorkout] = useState(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [viewingWorkout, setViewingWorkout] = useState(null);
+  const [, forceUpdate] = useState(0);
 
   const startWorkout = useCallback((template) => {
     const settings = getSettings();
@@ -41,9 +47,9 @@ export default function App() {
           restTimerSeconds: te.restTimerSeconds,
           barType: te.barType,
           notes: [],
-          sets: Array.from({ length: te.defaultSets || 3 }, (_, i) => ({
+          sets: (te.sets || Array.from({ length: te.defaultSets || 3 }, () => ({ setType: 'normal' }))).map((s, i) => ({
             setNumber: i + 1,
-            setType: 'normal',
+            setType: s.setType || 'normal',
             weight: '',
             reps: '',
             rpe: null,
@@ -106,8 +112,14 @@ export default function App() {
     startWorkout,
     finishWorkout,
     cancelWorkout,
+    editingTemplate,
+    setEditingTemplate,
+    viewingWorkout,
+    setViewingWorkout,
+    forceUpdate: () => forceUpdate(n => n + 1),
   };
 
+  // 1. Completed workout summary (no nav)
   if (completedWorkout) {
     return (
       <AppContext.Provider value={ctx}>
@@ -119,6 +131,7 @@ export default function App() {
     );
   }
 
+  // 2. Active workout (no nav)
   if (activeWorkout) {
     return (
       <AppContext.Provider value={ctx}>
@@ -127,6 +140,41 @@ export default function App() {
     );
   }
 
+  // 3. Template editor (no nav)
+  if (editingTemplate) {
+    return (
+      <AppContext.Provider value={ctx}>
+        <TemplateEditor
+          template={editingTemplate}
+          onSave={(t) => {
+            saveTemplate(t);
+            setEditingTemplate(null);
+            forceUpdate(n => n + 1);
+          }}
+          onDelete={(id) => {
+            deleteTemplate(id);
+            setEditingTemplate(null);
+            forceUpdate(n => n + 1);
+          }}
+          onCancel={() => setEditingTemplate(null)}
+        />
+      </AppContext.Provider>
+    );
+  }
+
+  // 4. Workout detail (no nav)
+  if (viewingWorkout) {
+    return (
+      <AppContext.Provider value={ctx}>
+        <WorkoutDetail
+          workout={viewingWorkout}
+          onBack={() => setViewingWorkout(null)}
+        />
+      </AppContext.Provider>
+    );
+  }
+
+  // 5. Normal screens + BottomNav
   return (
     <AppContext.Provider value={ctx}>
       {screen === 'home' && <HomeScreen />}
