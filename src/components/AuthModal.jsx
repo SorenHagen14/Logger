@@ -3,53 +3,27 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../data/supabase.js';
 
 export default function AuthModal({ onClose }) {
-  const [step, setStep] = useState('email'); // 'email' | 'code'
+  const [sent, setSent] = useState(false);
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function sendCode(e) {
+  async function sendLink(e) {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
     setError('');
     const { error: err } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: window.location.origin + window.location.pathname,
+      },
     });
     setLoading(false);
     if (err) { setError(err.message); return; }
-    setStep('code');
+    setSent(true);
   }
-
-  async function verifyCode(e) {
-    e.preventDefault();
-    if (code.length < 6) return;
-    setLoading(true);
-    setError('');
-    const { error: err } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: code.trim(),
-      type: 'email',
-    });
-    setLoading(false);
-    if (err) { setError('Invalid or expired code. Try again.'); return; }
-    onClose();
-  }
-
-  const inputStyle = {
-    width: '100%',
-    height: 52,
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    padding: '0 16px',
-    fontSize: 16,
-    color: 'var(--text)',
-    letterSpacing: step === 'code' ? '0.25em' : 'normal',
-    textAlign: step === 'code' ? 'center' : 'left',
-    fontWeight: step === 'code' ? 700 : 400,
-  };
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
@@ -65,21 +39,29 @@ export default function AuthModal({ onClose }) {
           letterSpacing: '0.06em',
           marginBottom: 6,
         }}>
-          {step === 'email' ? 'Sign In' : 'Check Your Email'}
+          {sent ? 'Check Your Email' : 'Sign In'}
         </h3>
 
-        {step === 'email' ? (
+        {!sent ? (
           <>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
-              Enter your email to receive a 6-digit login code. Your workouts will sync across all your devices.
+              Enter your email and we'll send a sign-in link. Your workouts sync automatically once signed in.
             </p>
-            <form onSubmit={sendCode}>
+            <form onSubmit={sendLink}>
               <input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                style={inputStyle}
+                style={{
+                  width: '100%',
+                  height: 52,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  padding: '0 16px',
+                  fontSize: 16,
+                  color: 'var(--text)',
+                }}
                 autoFocus
                 autoCapitalize="none"
                 autoComplete="email"
@@ -93,52 +75,36 @@ export default function AuthModal({ onClose }) {
                 disabled={loading || !email.trim()}
                 style={{ width: '100%', marginTop: 16, opacity: loading ? 0.6 : 1 }}
               >
-                {loading ? 'Sending…' : 'Send Code'}
+                {loading ? 'Sending…' : 'Send Sign-in Link'}
               </button>
             </form>
           </>
         ) : (
           <>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
-              A 6-digit code was sent to <strong style={{ color: 'var(--text)' }}>{email}</strong>. Enter it below.
+              A sign-in link was sent to{' '}
+              <strong style={{ color: 'var(--text)' }}>{email}</strong>.
+              Tap it and you'll be signed in automatically.
             </p>
-            <form onSubmit={verifyCode}>
-              <input
-                type="number"
-                inputMode="numeric"
-                placeholder="000000"
-                value={code}
-                onChange={e => setCode(e.target.value.slice(0, 6))}
-                style={inputStyle}
-                autoFocus
-              />
-              {error && (
-                <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>{error}</p>
-              )}
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading || code.length < 6}
-                style={{ width: '100%', marginTop: 16, opacity: loading ? 0.6 : 1 }}
-              >
-                {loading ? 'Verifying…' : 'Sign In'}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setStep('email'); setCode(''); setError(''); }}
-                style={{
-                  width: '100%',
-                  marginTop: 10,
-                  padding: '12px',
-                  fontSize: 13,
-                  color: 'var(--text-secondary)',
-                  background: 'transparent',
-                  textDecoration: 'underline',
-                }}
-              >
-                Use a different email
-              </button>
-            </form>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
+              The link opens this app in your browser. Come back here after tapping it — your data will sync automatically.
+            </p>
+            <button
+              onClick={() => { setSent(false); setEmail(''); }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              Use a different email
+            </button>
           </>
         )}
 
