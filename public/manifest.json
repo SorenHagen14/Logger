@@ -9,7 +9,7 @@
   "theme_color": "#0D0D0F",
   "icons": [
     {
-      "src": "/Logger/icons.svg",
+      "src": "/Logger/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }
