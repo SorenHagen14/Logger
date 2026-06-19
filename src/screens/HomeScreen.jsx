@@ -108,8 +108,8 @@ export default function HomeScreen() {
               <button
                 onClick={() => shareAllTemplates(templates)}
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 44,
+                  height: 44,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -124,8 +124,8 @@ export default function HomeScreen() {
             <button
               onClick={() => setEditingTemplate({ id: generateId(), name: '', exercises: [], supersets: [] })}
               style={{
-                width: 32,
-                height: 32,
+                width: 44,
+                height: 44,
                 background: 'var(--accent)',
                 color: 'var(--accent-text)',
                 display: 'flex',
@@ -219,10 +219,10 @@ export default function HomeScreen() {
                   }}
                   style={{
                     position: 'absolute',
-                    top: 10,
-                    right: 10,
-                    width: 28,
-                    height: 28,
+                    top: 2,
+                    right: 2,
+                    width: 44,
+                    height: 44,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -248,8 +248,8 @@ export default function HomeScreen() {
             justifyContent: 'space-between',
             alignItems: 'center',
             width: '100%',
-            padding: 0,
-            marginBottom: historyOpen ? 16 : 0,
+            padding: '12px 0',
+            marginBottom: historyOpen ? 4 : 0,
             background: 'none',
           }}
         >

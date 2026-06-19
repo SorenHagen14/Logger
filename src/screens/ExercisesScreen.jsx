@@ -81,8 +81,8 @@ export default function ExercisesScreen() {
         <button
           onClick={() => { setShowCreate(true); setEditingExercise(null); setNewName(''); setNewGroup('Chest'); }}
           style={{
-            width: 32,
-            height: 32,
+            width: 44,
+            height: 44,
             background: 'var(--accent)',
             color: 'var(--accent-text)',
             display: 'flex',

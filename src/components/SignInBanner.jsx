@@ -36,8 +36,8 @@ export default function SignInBanner({ onDismiss }) {
         onClick={signInWithGoogle}
         style={{
           flexShrink: 0,
-          height: 30,
-          padding: '0 10px',
+          height: 44,
+          padding: '0 14px',
           background: 'var(--accent)',
           color: 'var(--accent-text)',
           border: 'none',
@@ -57,8 +57,8 @@ export default function SignInBanner({ onDismiss }) {
         aria-label="Dismiss"
         style={{
           flexShrink: 0,
-          width: 28,
-          height: 28,
+          width: 44,
+          height: 44,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
