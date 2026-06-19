@@ -76,7 +76,6 @@ export default function HomeScreen() {
       <div style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderRadius: 8,
         padding: '20px 16px',
         marginBottom: 32,
       }}>
@@ -145,7 +144,6 @@ export default function HomeScreen() {
           <div className="empty-state" style={{
             padding: '32px 24px',
             border: '1px solid var(--border)',
-            borderRadius: 8,
           }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/>
@@ -164,7 +162,6 @@ export default function HomeScreen() {
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
-                  borderRadius: 8,
                   padding: '16px',
                   position: 'relative',
                   cursor: 'pointer',
