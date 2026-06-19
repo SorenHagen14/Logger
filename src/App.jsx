@@ -20,6 +20,7 @@ import BottomNav from './components/BottomNav.jsx';
 import PullToRefresh from './components/PullToRefresh.jsx';
 import SignInBanner from './components/SignInBanner.jsx';
 import UpdatePrompt from './components/UpdatePrompt.jsx';
+import WhatsNew from './components/WhatsNew.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
 import ExercisesScreen from './screens/ExercisesScreen.jsx';
 import SettingsScreen from './screens/SettingsScreen.jsx';
@@ -228,7 +229,6 @@ export default function App() {
             workout={completedWorkout}
             onDone={() => { setCompletedWorkout(null); setScreen('home'); }}
           />
-          <UpdatePrompt />
         </PullToRefresh>
       </AppContext.Provider>
     );
@@ -240,7 +240,6 @@ export default function App() {
       <AppContext.Provider value={ctx}>
         <PullToRefresh>
           <ActiveWorkout />
-          <UpdatePrompt />
         </PullToRefresh>
       </AppContext.Provider>
     );
@@ -265,7 +264,6 @@ export default function App() {
             }}
             onCancel={() => setEditingTemplate(null)}
           />
-          <UpdatePrompt />
         </PullToRefresh>
       </AppContext.Provider>
     );
@@ -280,7 +278,6 @@ export default function App() {
             workout={viewingWorkout}
             onBack={() => setViewingWorkout(null)}
           />
-          <UpdatePrompt />
         </PullToRefresh>
       </AppContext.Provider>
     );
@@ -298,6 +295,7 @@ export default function App() {
         {screen === 'settings' && <SettingsScreen />}
         <BottomNav />
         <UpdatePrompt />
+        <WhatsNew />
       </PullToRefresh>
     </AppContext.Provider>
   );
