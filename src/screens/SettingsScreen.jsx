@@ -245,6 +245,34 @@ export default function SettingsScreen() {
         </button>
       </div>
 
+      {/* Feedback */}
+      <div style={{
+        borderTop: '1px solid var(--border)',
+        padding: '20px 0',
+        marginBottom: 24,
+      }}>
+        <div className="label" style={{ marginBottom: 14 }}>Feedback</div>
+        <a
+          href="mailto:sorenhagen14@gmail.com?subject=Logger%20Feedback"
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '14px',
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            background: 'transparent',
+            color: 'var(--text)',
+            border: '1px solid var(--border)',
+            textAlign: 'center',
+            textDecoration: 'none',
+          }}
+        >
+          Report Bug / Request Feature
+        </a>
+      </div>
+
       <div style={{
         textAlign: 'center',
         padding: '32px 0',
