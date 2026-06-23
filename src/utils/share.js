@@ -37,13 +37,15 @@ export function encodeWorkout(workout) {
       })),
   };
 
-  return BASE_URL + '#share=' + toBase64Url(JSON.stringify(payload));
+  return BASE_URL + '#share/' + toBase64Url(JSON.stringify(payload));
 }
 
 export function decodeShareUrl(hash) {
-  if (!hash || !hash.startsWith('#share=')) return null;
+  if (!hash) return null;
+  const prefix = hash.startsWith('#share/') ? '#share/' : hash.startsWith('#share=') ? '#share=' : null;
+  if (!prefix) return null;
   try {
-    const b64 = hash.slice('#share='.length);
+    const b64 = hash.slice(prefix.length);
     const payload = JSON.parse(fromBase64Url(b64));
     return {
       id: generateId(),
@@ -95,13 +97,15 @@ export function encodeTemplate(template) {
     }),
   };
 
-  return BASE_URL + '#tmpl=' + toBase64Url(JSON.stringify(payload));
+  return BASE_URL + '#tmpl/' + toBase64Url(JSON.stringify(payload));
 }
 
 export function decodeTemplateUrl(hash) {
-  if (!hash || !hash.startsWith('#tmpl=')) return null;
+  if (!hash) return null;
+  const prefix = hash.startsWith('#tmpl/') ? '#tmpl/' : hash.startsWith('#tmpl=') ? '#tmpl=' : null;
+  if (!prefix) return null;
   try {
-    const b64 = hash.slice('#tmpl='.length);
+    const b64 = hash.slice(prefix.length);
     const payload = JSON.parse(fromBase64Url(b64));
 
     const allExercises = getExercises();
@@ -170,13 +174,15 @@ export function encodeAllTemplates(templates) {
     }),
   }));
 
-  return BASE_URL + '#tmpls=' + toBase64Url(JSON.stringify(payload));
+  return BASE_URL + '#tmpls/' + toBase64Url(JSON.stringify(payload));
 }
 
 export function decodeAllTemplatesUrl(hash) {
-  if (!hash || !hash.startsWith('#tmpls=')) return null;
+  if (!hash) return null;
+  const prefix = hash.startsWith('#tmpls/') ? '#tmpls/' : hash.startsWith('#tmpls=') ? '#tmpls=' : null;
+  if (!prefix) return null;
   try {
-    const b64 = hash.slice('#tmpls='.length);
+    const b64 = hash.slice(prefix.length);
     const payload = JSON.parse(fromBase64Url(b64));
     if (!Array.isArray(payload)) return null;
 

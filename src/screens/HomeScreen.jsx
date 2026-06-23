@@ -27,16 +27,25 @@ export default function HomeScreen() {
     });
   };
 
-  const templates = getTemplates().sort((a, b) => {
-    if (!a.lastCompletedAt && !b.lastCompletedAt) return 0;
-    if (!a.lastCompletedAt) return -1;
-    if (!b.lastCompletedAt) return 1;
-    return new Date(a.lastCompletedAt) - new Date(b.lastCompletedAt);
-  });
-
-  const workouts = getWorkouts().sort((a, b) =>
+  const allWorkouts = getWorkouts().sort((a, b) =>
     new Date(b.completedAt) - new Date(a.completedAt)
   );
+
+  const getLastCompleted = (templateId) => {
+    const w = allWorkouts.find(w => w.templateId === templateId);
+    return w?.completedAt || null;
+  };
+
+  const templates = getTemplates().sort((a, b) => {
+    const aLast = getLastCompleted(a.id);
+    const bLast = getLastCompleted(b.id);
+    if (!aLast && !bLast) return 0;
+    if (!aLast) return -1;
+    if (!bLast) return 1;
+    return new Date(aLast) - new Date(bLast);
+  });
+
+  const workouts = allWorkouts;
 
   const totalWorkouts = workouts.length;
 
@@ -187,7 +196,7 @@ export default function HomeScreen() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
                 }}>
-                  <span>{formatRelativeTime(t.lastCompletedAt)}</span>
+                  <span>{formatRelativeTime(getLastCompleted(t.id))}</span>
                   {t.exercises.length > 0 && (
                     <span>{t.exercises.length} exercise{t.exercises.length !== 1 ? 's' : ''}</span>
                   )}
