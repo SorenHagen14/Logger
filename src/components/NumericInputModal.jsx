@@ -2,17 +2,23 @@ import { useState } from 'react';
 
 export default function NumericInputModal({ value, allowDecimal, placeholder, onConfirm, onClose }) {
   const [display, setDisplay] = useState(String(value ?? ''));
+  const [fresh, setFresh] = useState(true);
 
   const handleKey = (key) => {
     let next;
     if (key === 'back') {
-      next = display.slice(0, -1);
+      next = fresh ? '' : display.slice(0, -1);
     } else if (key === '.') {
-      if (display.includes('.')) return;
-      next = display === '' ? '0.' : display + '.';
+      if (fresh) {
+        next = '0.';
+      } else {
+        if (display.includes('.')) return;
+        next = display === '' ? '0.' : display + '.';
+      }
     } else {
-      next = display === '0' ? key : display + key;
+      next = fresh ? key : (display === '0' ? key : display + key);
     }
+    setFresh(false);
     setDisplay(next);
     onConfirm(next);
   };

@@ -138,10 +138,10 @@ export function decodeTemplateUrl(hash) {
 
 export async function shareWorkout(workout) {
   const url = encodeWorkout(workout);
-  const text = `Check out my ${workout.templateName || 'workout'}`;
+  const text = `Check out my ${workout.templateName || 'workout'}\n${url}`;
 
   if (navigator.share) {
-    await navigator.share({ text, url });
+    await navigator.share({ text });
     return true;
   }
 
@@ -215,10 +215,10 @@ export function decodeAllTemplatesUrl(hash) {
 
 export async function shareTemplate(template) {
   const url = encodeTemplate(template);
-  const text = `Try my template: ${template.name || 'Untitled'}`;
+  const text = `Try my template: ${template.name || 'Untitled'}\n${url}`;
 
   if (navigator.share) {
-    await navigator.share({ text, url });
+    await navigator.share({ text });
     return true;
   }
 
@@ -229,10 +229,10 @@ export async function shareTemplate(template) {
 export async function shareAllTemplates(templates) {
   const url = encodeAllTemplates(templates);
   const names = templates.map(t => t.name || 'Untitled');
-  const text = `Check out my templates: ${names.join(', ')}`;
+  const text = `Check out my templates: ${names.join(', ')}\n${url}`;
 
   if (navigator.share) {
-    await navigator.share({ text, url });
+    await navigator.share({ text });
     return true;
   }
 

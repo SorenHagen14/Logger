@@ -5,6 +5,7 @@ import { MUSCLE_GROUPS } from '../data/exercises.js';
 import { generateId } from '../utils/helpers.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import MuscleMap from '../components/MuscleMap.jsx';
+import ExerciseHistory from '../components/ExerciseHistory.jsx';
 
 export default function ExercisesScreen() {
   const [search, setSearch] = useState('');
@@ -12,6 +13,7 @@ export default function ExercisesScreen() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingExercise, setEditingExercise] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [historyExercise, setHistoryExercise] = useState(null);
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('Chest');
   const [refresh, setRefresh] = useState(0);
@@ -167,8 +169,20 @@ export default function ExercisesScreen() {
                 padding: '10px 0',
                 borderBottom: '1px solid var(--border)',
               }}>
-                <MuscleMap muscleGroup={ex.muscleGroup} size={28} />
-                <span style={{ fontSize: 15, flex: 1 }}>{ex.name}</span>
+                <div
+                  onClick={() => setHistoryExercise(ex)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    flex: 1,
+                    cursor: 'pointer',
+                    minHeight: 44,
+                  }}
+                >
+                  <MuscleMap muscleGroup={ex.muscleGroup} size={28} />
+                  <span style={{ fontSize: 15 }}>{ex.name}</span>
+                </div>
                 {!ex.isBuiltIn && (
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
@@ -278,6 +292,13 @@ export default function ExercisesScreen() {
           danger
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {historyExercise && (
+        <ExerciseHistory
+          exercise={historyExercise}
+          onClose={() => setHistoryExercise(null)}
         />
       )}
     </div>

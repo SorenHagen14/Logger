@@ -695,7 +695,7 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
             alignItems: 'center',
             padding: '6px 0',
             minHeight: 44,
-            background: set.completed ? 'var(--green-dim)' : 'transparent',
+            background: set.completed ? 'linear-gradient(var(--green-dim), var(--green-dim)), var(--bg)' : 'var(--bg)',
             borderBottom: '1px solid var(--border)',
             transform: `translateX(-${swipeX}px)`,
             transition: swiping ? 'none' : 'transform 0.2s',
@@ -751,7 +751,7 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
               width: '100%',
-              color: set.weight !== '' ? 'var(--text)' : 'var(--text-muted)',
+              color: set.completed || set.weight !== '' ? 'var(--text)' : 'var(--text-muted)',
             }}
           >
             {set.weight !== '' ? set.weight : (prev?.weight?.toString() || '—')}
@@ -768,7 +768,7 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
               width: '100%',
-              color: set.reps !== '' ? 'var(--text)' : 'var(--text-muted)',
+              color: set.completed || set.reps !== '' ? 'var(--text)' : 'var(--text-muted)',
             }}
           >
             {set.reps !== '' ? set.reps : (prev?.reps?.toString() || '—')}

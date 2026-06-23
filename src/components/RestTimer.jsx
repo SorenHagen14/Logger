@@ -18,6 +18,7 @@ export default function RestTimer({ duration, active, onDismiss, onDurationChang
         if (prev <= 1) {
           clearInterval(intervalRef.current);
           if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          onDismiss();
           return 0;
         }
         return prev - 1;
@@ -30,7 +31,6 @@ export default function RestTimer({ duration, active, onDismiss, onDurationChang
   const radius = 15;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress);
-  const done = active && remaining === 0;
 
   const adjustDuration = (delta) => {
     const next = Math.max(15, duration + delta);
@@ -111,7 +111,6 @@ export default function RestTimer({ duration, active, onDismiss, onDurationChang
           width: '100%',
         }}
       >
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>⏱</span>
         <span style={{
           fontSize: 12,
           color: 'var(--text-muted)',
@@ -130,7 +129,7 @@ export default function RestTimer({ duration, active, onDismiss, onDurationChang
       justifyContent: 'center',
       gap: 12,
       padding: '8px 4px',
-      background: done ? 'var(--green-dim)' : 'var(--highlight)',
+      background: 'var(--highlight)',
       borderTop: '1px solid var(--border)',
     }}>
       <div style={{ position: 'relative', width: 36, height: 36, flexShrink: 0 }}>
@@ -139,7 +138,7 @@ export default function RestTimer({ duration, active, onDismiss, onDurationChang
           <circle
             cx="18" cy="18" r={radius}
             fill="none"
-            stroke={done ? 'var(--green)' : 'var(--text-secondary)'}
+            stroke="var(--text-secondary)"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -156,14 +155,14 @@ export default function RestTimer({ duration, active, onDismiss, onDurationChang
           fontSize: 10,
           fontWeight: 700,
           fontVariantNumeric: 'tabular-nums',
-          color: done ? 'var(--green)' : 'var(--text)',
+          color: 'var(--text)',
         }}>
           {formatTimer(remaining)}
         </div>
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 500, color: done ? 'var(--green)' : 'var(--text-muted)' }}>
-        {done ? "Time's up!" : 'Rest'}
+      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>
+        Rest
       </div>
 
       <button
@@ -174,13 +173,13 @@ export default function RestTimer({ duration, active, onDismiss, onDurationChang
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '0.06em',
-          color: done ? 'var(--bg)' : 'var(--text-muted)',
-          background: done ? 'var(--green)' : 'transparent',
-          border: `1px solid ${done ? 'var(--green)' : 'var(--border)'}`,
+          color: 'var(--text-muted)',
+          background: 'transparent',
+          border: '1px solid var(--border)',
           flexShrink: 0,
         }}
       >
-        {done ? 'Dismiss' : 'Skip'}
+        Skip
       </button>
     </div>
   );

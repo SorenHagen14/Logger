@@ -106,6 +106,24 @@ export function getPreviousNotesForExercise(exerciseId) {
   return [];
 }
 
+export function getExerciseHistory(exerciseId) {
+  const workouts = getWorkouts()
+    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+  const history = [];
+  for (const w of workouts) {
+    const ex = w.exercises.find(e => e.exerciseId === exerciseId);
+    if (!ex) continue;
+    const completedSets = ex.sets.filter(s => s.completed);
+    if (completedSets.length === 0) continue;
+    history.push({
+      date: w.completedAt,
+      templateName: w.templateName,
+      sets: completedSets,
+    });
+  }
+  return history;
+}
+
 export function getPersonalRecords(exerciseId) {
   const workouts = getWorkouts();
   let maxWeight = 0;
