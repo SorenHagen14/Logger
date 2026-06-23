@@ -17,6 +17,7 @@ export default function ActiveWorkout() {
   const [activeTimers, setActiveTimers] = useState({});
   const [toast, setToast] = useState(null);
   const [menuExerciseIdx, setMenuExerciseIdx] = useState(null);
+  const [numpadOpen, setNumpadOpen] = useState(false);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [dragActivating, setDragActivating] = useState(null);
@@ -291,7 +292,7 @@ export default function ActiveWorkout() {
   return (
     <div style={{
       paddingTop: 'env(safe-area-inset-top, 0px)',
-      paddingBottom: 24,
+      paddingBottom: numpadOpen ? 300 : 24,
       minHeight: '100dvh',
     }}>
       {/* Header */}
@@ -471,6 +472,7 @@ export default function ActiveWorkout() {
                             onUpdateSet={(updates) => updateSet(exIdx, setIdx, updates)}
                             onToggleComplete={() => toggleSetComplete(exIdx, setIdx)}
                             onDelete={() => deleteSet(exIdx, setIdx)}
+                            onNumpadToggle={setNumpadOpen}
                           />
                           <RestTimer
                             key={`timer-${timerKey}`}
@@ -626,7 +628,7 @@ export default function ActiveWorkout() {
   );
 }
 
-function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpdateSet, onToggleComplete, onDelete }) {
+function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpdateSet, onToggleComplete, onDelete, onNumpadToggle }) {
   const [swiping, setSwiping] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const startX = useRef(0);
@@ -634,6 +636,19 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
   const [typeMenuPos, setTypeMenuPos] = useState({ top: 0, left: 0 });
   const [showRpe, setShowRpe] = useState(false);
   const [numericModal, setNumericModal] = useState(null); // null | 'weight' | 'reps'
+  const weightRef = useRef(null);
+  const repsRef = useRef(null);
+
+  useEffect(() => {
+    if (numericModal) {
+      const ref = numericModal === 'weight' ? weightRef : repsRef;
+      if (ref.current) {
+        requestAnimationFrame(() => {
+          ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    }
+  }, [numericModal]);
 
   const handleTouchStart = (e) => {
     startX.current = e.touches[0].clientX;
@@ -742,7 +757,8 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
 
           {/* Weight */}
           <button
-            onClick={(e) => { e.stopPropagation(); setNumericModal('weight'); }}
+            ref={weightRef}
+            onClick={(e) => { e.stopPropagation(); setNumericModal('weight'); onNumpadToggle(true); }}
             style={{
               height: 36,
               background: 'var(--surface)',
@@ -759,7 +775,8 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
 
           {/* Reps */}
           <button
-            onClick={(e) => { e.stopPropagation(); setNumericModal('reps'); }}
+            ref={repsRef}
+            onClick={(e) => { e.stopPropagation(); setNumericModal('reps'); onNumpadToggle(true); }}
             style={{
               height: 36,
               background: 'var(--surface)',
@@ -880,7 +897,7 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
           allowDecimal={numericModal === 'weight'}
           placeholder={numericModal === 'weight' ? (prev?.weight?.toString() || '—') : (prev?.reps?.toString() || '—')}
           onConfirm={(val) => onUpdateSet({ [numericModal]: val })}
-          onClose={() => setNumericModal(null)}
+          onClose={() => { setNumericModal(null); onNumpadToggle(false); }}
         />
       )}
     </>

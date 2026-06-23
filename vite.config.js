@@ -9,8 +9,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       manifest: {
-        name: 'Workout Logger',
-        short_name: 'Workout',
+        name: 'Logger',
+        short_name: 'Logger',
         description: 'Track your workouts',
         start_url: '/Logger/',
         scope: '/Logger/',
