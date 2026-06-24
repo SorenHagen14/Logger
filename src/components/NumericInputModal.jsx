@@ -37,12 +37,12 @@ export default function NumericInputModal({ value, allowDecimal, placeholder, on
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
-      onClick={handleDone}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', pointerEvents: 'none' }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
+          pointerEvents: 'auto',
           background: 'var(--bg)',
           borderTop: '1px solid var(--border)',
           animation: 'slideUp 0.22s ease-out',

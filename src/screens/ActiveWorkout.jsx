@@ -18,6 +18,7 @@ export default function ActiveWorkout() {
   const [toast, setToast] = useState(null);
   const [menuExerciseIdx, setMenuExerciseIdx] = useState(null);
   const [numpadOpen, setNumpadOpen] = useState(false);
+  const [numericTarget, setNumericTarget] = useState(null);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [dragActivating, setDragActivating] = useState(null);
@@ -143,7 +144,7 @@ export default function ActiveWorkout() {
       }
 
       const restTime = ex.restTimerSeconds || settings.defaultRestTimerSeconds;
-      setActiveTimers(prev => ({ ...prev, [timerKey]: { duration: restTime } }));
+      setActiveTimers({ [timerKey]: { duration: restTime } });
     } else if (!nowComplete) {
       dismissTimer(timerKey);
     }
@@ -238,6 +239,8 @@ export default function ActiveWorkout() {
       setDragActivating(null);
       setDragIdx(exIdx);
       setDragOverIdx(exIdx);
+      setNumericTarget(null);
+      setNumpadOpen(false);
       if (navigator.vibrate) navigator.vibrate(20);
     }, 400);
   }, []);
@@ -290,11 +293,14 @@ export default function ActiveWorkout() {
   if (!workout) return null;
 
   return (
-    <div style={{
-      paddingTop: 'env(safe-area-inset-top, 0px)',
-      paddingBottom: numpadOpen ? 300 : 24,
-      minHeight: '100dvh',
-    }}>
+    <div
+      onClick={() => { if (numericTarget) { setNumericTarget(null); setNumpadOpen(false); } }}
+      style={{
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: numpadOpen ? 300 : 24,
+        minHeight: '100dvh',
+      }}
+    >
       {/* Header */}
       <div style={{
         position: 'sticky',
@@ -386,7 +392,7 @@ export default function ActiveWorkout() {
                       letterSpacing: '0.04em',
                       userSelect: 'none',
                       WebkitUserSelect: 'none',
-                      touchAction: 'auto',
+                      touchAction: 'none',
                       cursor: 'grab',
                     }}
                     onTouchStart={(e) => handleTouchStart(exIdx, e)}
@@ -395,130 +401,149 @@ export default function ActiveWorkout() {
                   >
                     {getExName(ex.exerciseId)}
                   </div>
-                  <button
-                    onClick={() => setMenuExerciseIdx(exIdx)}
-                    style={{ padding: '4px 8px', color: 'var(--text-muted)', fontSize: 18 }}
-                  >
-                    &#x22EE;
-                  </button>
+                  {dragIdx === null && (
+                    <button
+                      onClick={() => setMenuExerciseIdx(exIdx)}
+                      style={{ padding: '4px 8px', color: 'var(--text-muted)', fontSize: 18 }}
+                    >
+                      &#x22EE;
+                    </button>
+                  )}
                 </div>
 
-                {/* Notes */}
-                {ex.notes?.filter(n => n.delivered).map((note, ni) => (
-                  <div key={ni} style={{
-                    background: 'var(--note-bg)',
-                    padding: '8px 12px',
-                    marginBottom: 10,
-                    fontSize: 13,
-                    lineHeight: 1.4,
-                    borderLeft: '2px solid var(--yellow)',
-                  }}>
-                    {note.text}
-                  </div>
-                ))}
-
-                {/* Column Header */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '40px 60px 1fr 1fr 40px',
-                  gap: 8,
-                  alignItems: 'center',
-                  padding: '6px 0',
-                  borderBottom: '1px solid var(--border)',
-                  marginBottom: 2,
-                }}>
-                  {['Set', 'Prev', ex.weightUnit || settings.defaultWeightUnit, 'Reps', ''].map((label, i) => (
-                    <span key={i} className="label" style={{ textAlign: 'center', margin: 0 }}>
-                      {label}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Set Rows */}
-                {(() => {
-                  let mainSetNum = 0;
-                  return ex.sets.map((set, setIdx) => {
-                    const isDrop = set.setType === 'drop';
-                    if (!isDrop) mainSetNum++;
-                    const displayNum = mainSetNum;
-                    const prev = prevData?.[setIdx];
-                    const setTypeColors = {
-                      normal: 'var(--text)',
-                      'warm-up': 'var(--yellow)',
-                      failure: 'var(--red)',
-                      drop: 'var(--green)',
-                    };
-
-                    const timerKey = `${exIdx}-${setIdx}`;
-                    const timerActive = set.completed && !!activeTimers[timerKey];
-                    const restDuration = ex.restTimerSeconds || settings.defaultRestTimerSeconds;
-                    const isLastDropInGroup = isDrop &&
-                      (setIdx === ex.sets.length - 1 || ex.sets[setIdx + 1]?.setType !== 'drop');
-
-                    return (
-                      <div key={setIdx}>
-                        <div style={isDrop ? {
-                          marginLeft: 20,
-                          borderLeft: '2px solid var(--green)',
-                          paddingLeft: 12,
-                        } : undefined}>
-                          <SetRow
-                            set={set}
-                            setIdx={setIdx}
-                            displayNum={displayNum}
-                            prev={prev}
-                            setTypeColor={setTypeColors[set.setType]}
-                            weightUnit={ex.weightUnit || settings.defaultWeightUnit}
-                            onUpdateSet={(updates) => updateSet(exIdx, setIdx, updates)}
-                            onToggleComplete={() => toggleSetComplete(exIdx, setIdx)}
-                            onDelete={() => deleteSet(exIdx, setIdx)}
-                            onNumpadToggle={setNumpadOpen}
-                          />
-                          <RestTimer
-                            key={`timer-${timerKey}`}
-                            duration={restDuration}
-                            active={timerActive}
-                            onDismiss={() => dismissTimer(timerKey)}
-                            onDurationChange={(d) => updateExercise(exIdx, ex => ({ ...ex, restTimerSeconds: d }))}
-                          />
-                        </div>
-                        {isLastDropInGroup && (
-                          <button
-                            onClick={() => addDropSet(exIdx, setIdx)}
-                            style={{
-                              marginLeft: 34,
-                              fontSize: 11,
-                              fontWeight: 600,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.06em',
-                              color: 'var(--green)',
-                              padding: '8px 0',
-                            }}
-                          >
-                            + Drop Set
-                          </button>
-                        )}
-                      </div>
-                    );
-                  });
-                })()}
-
-                {/* Add Set */}
-                <button
-                  onClick={() => addSet(exIdx)}
-                  style={{
+                {dragIdx !== null ? (
+                  <div style={{
                     fontSize: 12,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    color: 'var(--text-secondary)',
-                    padding: '12px 0 4px',
-                    width: '100%',
-                    textAlign: 'center',
-                  }}
-                >
-                  + Add Set
-                </button>
+                    color: 'var(--text-muted)',
+                    padding: '4px 0',
+                  }}>
+                    {ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}
+                  </div>
+                ) : (
+                  <>
+                    {/* Notes */}
+                    {ex.notes?.filter(n => n.delivered).map((note, ni) => (
+                      <div key={ni} style={{
+                        background: 'var(--note-bg)',
+                        padding: '8px 12px',
+                        marginBottom: 10,
+                        fontSize: 13,
+                        lineHeight: 1.4,
+                        borderLeft: '2px solid var(--yellow)',
+                      }}>
+                        {note.text}
+                      </div>
+                    ))}
+
+                    {/* Column Header */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '40px 60px 1fr 1fr 40px',
+                      gap: 8,
+                      alignItems: 'center',
+                      padding: '6px 0',
+                      borderBottom: '1px solid var(--border)',
+                      marginBottom: 2,
+                    }}>
+                      {['Set', 'Prev', ex.weightUnit || settings.defaultWeightUnit, 'Reps', ''].map((label, i) => (
+                        <span key={i} className="label" style={{ textAlign: 'center', margin: 0 }}>
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Set Rows */}
+                    {(() => {
+                      let mainSetNum = 0;
+                      return ex.sets.map((set, setIdx) => {
+                        const isDrop = set.setType === 'drop';
+                        if (!isDrop) mainSetNum++;
+                        const displayNum = mainSetNum;
+                        const prev = prevData?.[setIdx];
+                        const setTypeColors = {
+                          normal: 'var(--text)',
+                          'warm-up': 'var(--yellow)',
+                          failure: 'var(--red)',
+                          drop: 'var(--green)',
+                        };
+
+                        const timerKey = `${exIdx}-${setIdx}`;
+                        const timerActive = set.completed && !!activeTimers[timerKey];
+                        const restDuration = ex.restTimerSeconds || settings.defaultRestTimerSeconds;
+                        const isLastDropInGroup = isDrop &&
+                          (setIdx === ex.sets.length - 1 || ex.sets[setIdx + 1]?.setType !== 'drop');
+
+                        return (
+                          <div key={setIdx}>
+                            <div style={isDrop ? {
+                              marginLeft: 20,
+                              borderLeft: '2px solid var(--green)',
+                              paddingLeft: 12,
+                            } : undefined}>
+                              <SetRow
+                                set={set}
+                                setIdx={setIdx}
+                                exIdx={exIdx}
+                                displayNum={displayNum}
+                                prev={prev}
+                                setTypeColor={setTypeColors[set.setType]}
+                                weightUnit={ex.weightUnit || settings.defaultWeightUnit}
+                                onUpdateSet={(updates) => updateSet(exIdx, setIdx, updates)}
+                                onToggleComplete={() => toggleSetComplete(exIdx, setIdx)}
+                                onDelete={() => deleteSet(exIdx, setIdx)}
+                                numericTarget={numericTarget}
+                                onNumericOpen={(field) => {
+                                  setNumericTarget({ exIdx, setIdx, field });
+                                  setNumpadOpen(true);
+                                }}
+                              />
+                              <RestTimer
+                                key={`timer-${timerKey}`}
+                                duration={restDuration}
+                                active={timerActive}
+                                onDismiss={() => dismissTimer(timerKey)}
+                                onDurationChange={(d) => updateExercise(exIdx, ex => ({ ...ex, restTimerSeconds: d }))}
+                              />
+                            </div>
+                            {isLastDropInGroup && (
+                              <button
+                                onClick={() => addDropSet(exIdx, setIdx)}
+                                style={{
+                                  marginLeft: 34,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.06em',
+                                  color: 'var(--green)',
+                                  padding: '8px 0',
+                                }}
+                              >
+                                + Drop Set
+                              </button>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+
+                    {/* Add Set */}
+                    <button
+                      onClick={() => addSet(exIdx)}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        color: 'var(--text-secondary)',
+                        padding: '12px 0 4px',
+                        width: '100%',
+                        textAlign: 'center',
+                      }}
+                    >
+                      + Add Set
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           );
@@ -624,31 +649,53 @@ export default function ActiveWorkout() {
           onDismiss={() => setToast(null)}
         />
       )}
+
+      {numericTarget && (() => {
+        const ex = workout.exercises[numericTarget.exIdx];
+        const set = ex?.sets[numericTarget.setIdx];
+        if (!set) return null;
+        const prevData = getPreviousDataForExercise(ex.exerciseId);
+        const prev = prevData?.[numericTarget.setIdx];
+        const field = numericTarget.field;
+        return (
+          <NumericInputModal
+            key={`${numericTarget.exIdx}-${numericTarget.setIdx}-${field}`}
+            value={field === 'weight' ? set.weight : set.reps}
+            allowDecimal={field === 'weight'}
+            placeholder={field === 'weight' ? (prev?.weight?.toString() || '—') : (prev?.reps?.toString() || '—')}
+            onConfirm={(val) => updateSet(numericTarget.exIdx, numericTarget.setIdx, { [field]: val })}
+            onClose={() => { setNumericTarget(null); setNumpadOpen(false); }}
+          />
+        );
+      })()}
     </div>
   );
 }
 
-function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpdateSet, onToggleComplete, onDelete, onNumpadToggle }) {
+function SetRow({ set, setIdx, exIdx, displayNum, prev, setTypeColor, weightUnit, onUpdateSet, onToggleComplete, onDelete, numericTarget, onNumericOpen }) {
   const [swiping, setSwiping] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const startX = useRef(0);
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [typeMenuPos, setTypeMenuPos] = useState({ top: 0, left: 0 });
   const [showRpe, setShowRpe] = useState(false);
-  const [numericModal, setNumericModal] = useState(null); // null | 'weight' | 'reps'
   const weightRef = useRef(null);
   const repsRef = useRef(null);
 
+  const isActiveWeight = numericTarget?.exIdx === exIdx && numericTarget?.setIdx === setIdx && numericTarget?.field === 'weight';
+  const isActiveReps = numericTarget?.exIdx === exIdx && numericTarget?.setIdx === setIdx && numericTarget?.field === 'reps';
+
   useEffect(() => {
-    if (numericModal) {
-      const ref = numericModal === 'weight' ? weightRef : repsRef;
-      if (ref.current) {
-        requestAnimationFrame(() => {
-          ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-      }
+    if (isActiveWeight && weightRef.current) {
+      requestAnimationFrame(() => {
+        weightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    } else if (isActiveReps && repsRef.current) {
+      requestAnimationFrame(() => {
+        repsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     }
-  }, [numericModal]);
+  }, [isActiveWeight, isActiveReps]);
 
   const handleTouchStart = (e) => {
     startX.current = e.touches[0].clientX;
@@ -758,11 +805,11 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
           {/* Weight */}
           <button
             ref={weightRef}
-            onClick={(e) => { e.stopPropagation(); setNumericModal('weight'); onNumpadToggle(true); }}
+            onClick={(e) => { e.stopPropagation(); onNumericOpen('weight'); }}
             style={{
               height: 36,
               background: 'var(--surface)',
-              border: `1px solid ${numericModal === 'weight' ? 'var(--accent)' : 'var(--border)'}`,
+              border: `1px solid ${isActiveWeight ? 'var(--accent)' : 'var(--border)'}`,
               textAlign: 'center',
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
@@ -776,11 +823,11 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
           {/* Reps */}
           <button
             ref={repsRef}
-            onClick={(e) => { e.stopPropagation(); setNumericModal('reps'); onNumpadToggle(true); }}
+            onClick={(e) => { e.stopPropagation(); onNumericOpen('reps'); }}
             style={{
               height: 36,
               background: 'var(--surface)',
-              border: `1px solid ${numericModal === 'reps' ? 'var(--accent)' : 'var(--border)'}`,
+              border: `1px solid ${isActiveReps ? 'var(--accent)' : 'var(--border)'}`,
               textAlign: 'center',
               fontSize: 15,
               fontVariantNumeric: 'tabular-nums',
@@ -891,15 +938,6 @@ function SetRow({ set, setIdx, displayNum, prev, setTypeColor, weightUnit, onUpd
         </div>
       )}
 
-      {numericModal && (
-        <NumericInputModal
-          value={numericModal === 'weight' ? set.weight : set.reps}
-          allowDecimal={numericModal === 'weight'}
-          placeholder={numericModal === 'weight' ? (prev?.weight?.toString() || '—') : (prev?.reps?.toString() || '—')}
-          onConfirm={(val) => onUpdateSet({ [numericModal]: val })}
-          onClose={() => { setNumericModal(null); onNumpadToggle(false); }}
-        />
-      )}
     </>
   );
 }
