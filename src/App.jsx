@@ -16,6 +16,7 @@ import {
 } from './data/db.js';
 import { supabase } from './data/supabase.js';
 import { setSyncUser, uploadToCloud, downloadFromCloud } from './data/sync.js';
+import { addWorkoutToHistory, backfillIfNeeded, setHistoryUser } from './data/historyDb.js';
 import BottomNav from './components/BottomNav.jsx';
 import PullToRefresh from './components/PullToRefresh.jsx';
 import SignInBanner from './components/SignInBanner.jsx';
@@ -49,12 +50,16 @@ export default function App() {
       const u = session?.user ?? null;
       setUser(u);
       setSyncUser(u?.id ?? null);
+      setHistoryUser(u?.id ?? null);
+      backfillIfNeeded(getWorkouts);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null;
       setUser(u);
       setSyncUser(u?.id ?? null);
+      setHistoryUser(u?.id ?? null);
+      backfillIfNeeded(getWorkouts);
 
       if (u) {
         setSyncing(true);
@@ -187,6 +192,7 @@ export default function App() {
 
     delete completed.originalOrder;
     saveWorkout(completed);
+    addWorkoutToHistory(completed);
 
     const templates = getTemplates();
     const template = templates.find(t => t.id === activeWorkout.templateId);
@@ -242,9 +248,7 @@ export default function App() {
   if (activeWorkout) {
     return (
       <AppContext.Provider value={ctx}>
-        <PullToRefresh>
           <ActiveWorkout />
-        </PullToRefresh>
       </AppContext.Provider>
     );
   }
@@ -253,7 +257,6 @@ export default function App() {
   if (editingTemplate) {
     return (
       <AppContext.Provider value={ctx}>
-        <PullToRefresh>
           <TemplateEditor
             template={editingTemplate}
             onSave={(t) => {
@@ -268,7 +271,6 @@ export default function App() {
             }}
             onCancel={() => setEditingTemplate(null)}
           />
-        </PullToRefresh>
       </AppContext.Provider>
     );
   }

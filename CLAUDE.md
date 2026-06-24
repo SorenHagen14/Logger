@@ -13,6 +13,7 @@ Design system: `docs/design.md` — art direction, color palette, typography rul
 - **Styling:** CSS Modules or plain CSS — no Tailwind
 - **Storage:** IndexedDB (via `idb` wrapper) for workouts/templates, localStorage for settings
 - **PWA:** Vite PWA plugin (Workbox) for service worker + manifest
+- **Hosting:** GitHub Pages only. Do NOT use or suggest Vercel, Netlify, or any other hosting provider.
 - **No backend. No auth. No external APIs.**
 
 ## Dev Commands
