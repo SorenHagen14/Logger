@@ -8,6 +8,7 @@ import UndoToast from '../components/UndoToast.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import ExerciseMenu from '../components/ExerciseMenu.jsx';
 import NumericInputModal from '../components/NumericInputModal.jsx';
+import ExerciseHistory from '../components/ExerciseHistory.jsx';
 
 export default function ActiveWorkout() {
   const { activeWorkout, setActiveWorkout, finishWorkout, cancelWorkout } = useContext(AppContext);
@@ -22,6 +23,7 @@ export default function ActiveWorkout() {
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [dragActivating, setDragActivating] = useState(null);
+  const [historyExercise, setHistoryExercise] = useState(null);
   const dragRefs = useRef([]);
   const longPressTimer = useRef(null);
   const dragStartY = useRef(0);
@@ -271,13 +273,15 @@ export default function ActiveWorkout() {
     }
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((exIdx) => {
+    const wasDragging = isDragging.current;
+    const hadTimer = !!longPressTimer.current;
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
     setDragActivating(null);
-    if (isDragging.current && dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+    if (wasDragging && dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
       setActiveWorkout(prev => {
         const exs = [...prev.exercises];
         const [moved] = exs.splice(dragIdx, 1);
@@ -285,10 +289,17 @@ export default function ActiveWorkout() {
         return { ...prev, exercises: exs };
       });
     }
+    if (!wasDragging && hadTimer && exIdx !== undefined) {
+      const ex = workout?.exercises[exIdx];
+      if (ex) {
+        const info = allExercises.find(e => e.id === ex.exerciseId);
+        if (info) setHistoryExercise(info);
+      }
+    }
     isDragging.current = false;
     setDragIdx(null);
     setDragOverIdx(null);
-  }, [dragIdx, dragOverIdx, setActiveWorkout]);
+  }, [dragIdx, dragOverIdx, setActiveWorkout, workout, allExercises]);
 
   if (!workout) return null;
 
@@ -397,7 +408,7 @@ export default function ActiveWorkout() {
                     }}
                     onTouchStart={(e) => handleTouchStart(exIdx, e)}
                     onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
+                    onTouchEnd={() => handleTouchEnd(exIdx)}
                   >
                     {getExName(ex.exerciseId)}
                   </div>
@@ -647,6 +658,13 @@ export default function ActiveWorkout() {
           message={toast.message}
           onUndo={toast.undo}
           onDismiss={() => setToast(null)}
+        />
+      )}
+
+      {historyExercise && (
+        <ExerciseHistory
+          exercise={historyExercise}
+          onClose={() => setHistoryExercise(null)}
         />
       )}
 
