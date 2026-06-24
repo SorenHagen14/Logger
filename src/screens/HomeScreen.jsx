@@ -7,13 +7,14 @@ import { shareTemplate, shareAllTemplates } from '../utils/share.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 export default function HomeScreen() {
-  const { startWorkout, setEditingTemplate, setViewingWorkout, forceUpdate } = useContext(AppContext);
+  const { startWorkout, setEditingTemplate, setViewingWorkout, setEditingWorkout, forceUpdate } = useContext(AppContext);
   const [confirmStart, setConfirmStart] = useState(null);
   const [menuTemplate, setMenuTemplate] = useState(null);
   const [renameTemplate, setRenameTemplate] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [menuWorkout, setMenuWorkout] = useState(null);
   const renameInputRef = useRef(null);
 
   const allExercises = getExercises();
@@ -288,36 +289,59 @@ export default function HomeScreen() {
             </div>
           ) : (
             workouts.map(w => (
-              <button
+              <div
                 key={w.id}
-                onClick={() => setViewingWorkout(w)}
                 style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '14px 0',
-                  borderBottom: '1px solid var(--border)',
-                  background: 'none',
-                  cursor: 'pointer',
                   display: 'flex',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
+                  borderBottom: '1px solid var(--border)',
                 }}
               >
-                <div>
-                  <div style={{
-                    fontSize: 15,
-                    fontWeight: 600,
-                    marginBottom: 2,
-                    letterSpacing: '-0.01em',
-                  }}>
-                    {w.templateName || 'Workout'}
+                <button
+                  onClick={() => setViewingWorkout(w)}
+                  style={{
+                    flex: 1,
+                    textAlign: 'left',
+                    padding: '14px 0',
+                    background: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <div style={{
+                      fontSize: 15,
+                      fontWeight: 600,
+                      marginBottom: 2,
+                      letterSpacing: '-0.01em',
+                    }}>
+                      {w.templateName || 'Workout'}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {formatDate(w.completedAt)} · {w.exercises.length} exercise{w.exercises.length !== 1 ? 's' : ''}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {formatDate(w.completedAt)} · {w.exercises.length} exercise{w.exercises.length !== 1 ? 's' : ''}
-                  </div>
-                </div>
-                <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>&rsaquo;</span>
-              </button>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>&rsaquo;</span>
+                </button>
+                <button
+                  onClick={() => setMenuWorkout(w)}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-muted)',
+                    fontSize: 16,
+                    lineHeight: 1,
+                    flexShrink: 0,
+                  }}
+                >
+                  &#x22EE;
+                </button>
+              </div>
             ))
           )}
         </div>}
@@ -463,6 +487,58 @@ export default function HomeScreen() {
                 Save
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {menuWorkout && createPortal(
+        <div className="modal-overlay" onClick={() => setMenuWorkout(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}>
+              <h3 style={{
+                fontSize: 14,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}>
+                {menuWorkout.templateName || 'Workout'}
+              </h3>
+              <button onClick={() => setMenuWorkout(null)} style={{
+                color: 'var(--text-muted)',
+                fontSize: 28,
+                lineHeight: 1,
+                padding: 4,
+              }}>
+                &times;
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                const w = menuWorkout;
+                setMenuWorkout(null);
+                setEditingWorkout(w);
+              }}
+              style={MENU_ITEM_STYLE}
+            >
+              <span style={{ fontSize: 16 }}>&#x270E;</span> Edit Workout
+            </button>
+            <button
+              onClick={() => {
+                const w = menuWorkout;
+                setMenuWorkout(null);
+                setViewingWorkout(w);
+              }}
+              style={{ ...MENU_ITEM_STYLE, borderBottom: 'none' }}
+            >
+              <span style={{ fontSize: 16 }}>&#x2192;</span> View Details
+            </button>
           </div>
         </div>,
         document.body

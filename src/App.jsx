@@ -28,6 +28,7 @@ import ActiveWorkout from './screens/ActiveWorkout.jsx';
 import WorkoutSummary from './screens/WorkoutSummary.jsx';
 import TemplateEditor from './screens/TemplateEditor.jsx';
 import WorkoutDetail from './screens/WorkoutDetail.jsx';
+import WorkoutEditor from './screens/WorkoutEditor.jsx';
 
 export const AppContext = createContext(null);
 
@@ -37,6 +38,7 @@ export default function App() {
   const [completedWorkout, setCompletedWorkout] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [viewingWorkout, setViewingWorkout] = useState(null);
+  const [editingWorkout, setEditingWorkout] = useState(null);
   const [, forceUpdate] = useState(0);
   const [user, setUser] = useState(null);
   const [syncing, setSyncing] = useState(false);
@@ -215,6 +217,8 @@ export default function App() {
     setEditingTemplate,
     viewingWorkout,
     setViewingWorkout,
+    editingWorkout,
+    setEditingWorkout,
     forceUpdate: () => forceUpdate(n => n + 1),
     user,
     syncing,
@@ -269,7 +273,27 @@ export default function App() {
     );
   }
 
-  // 4. Workout detail (no nav)
+  // 4. Workout editor (no nav)
+  if (editingWorkout) {
+    return (
+      <AppContext.Provider value={ctx}>
+        <PullToRefresh>
+          <WorkoutEditor
+            workout={editingWorkout}
+            onSave={(updated) => {
+              if (viewingWorkout?.id === updated.id) setViewingWorkout(updated);
+              if (completedWorkout?.id === updated.id) setCompletedWorkout(updated);
+              setEditingWorkout(null);
+              forceUpdate(n => n + 1);
+            }}
+            onCancel={() => setEditingWorkout(null)}
+          />
+        </PullToRefresh>
+      </AppContext.Provider>
+    );
+  }
+
+  // 5. Workout detail (no nav)
   if (viewingWorkout) {
     return (
       <AppContext.Provider value={ctx}>
@@ -283,7 +307,7 @@ export default function App() {
     );
   }
 
-  // 5. Normal screens + BottomNav
+  // 6. Normal screens + BottomNav
   return (
     <AppContext.Provider value={ctx}>
       <PullToRefresh>

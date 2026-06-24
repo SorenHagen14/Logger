@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useContext } from 'react';
+import { AppContext } from '../App.jsx';
 import { getExercises, getWorkouts, saveTemplate, getTemplates } from '../data/db.js';
 import { formatDate, formatDuration } from '../utils/helpers.js';
 import { shareWorkout } from '../utils/share.js';
 
 export default function WorkoutSummary({ workout, onDone }) {
+  const { setEditingWorkout } = useContext(AppContext);
   const [saveOrder, setSaveOrder] = useState(false);
   const allExercises = getExercises();
   const getExName = (id) => allExercises.find(e => e.id === id)?.name || id;
@@ -237,6 +239,24 @@ export default function WorkoutSummary({ workout, onDone }) {
           </button>
         </div>
       )}
+
+      <button
+        onClick={() => setEditingWorkout(workout)}
+        style={{
+          width: '100%',
+          padding: '14px 0',
+          fontSize: 14,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          color: 'var(--text)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          marginBottom: 12,
+        }}
+      >
+        Edit Workout
+      </button>
 
       <button
         onClick={() => shareWorkout(workout)}

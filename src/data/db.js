@@ -79,6 +79,16 @@ export function saveWorkout(workout) {
   syncAfterWrite();
 }
 
+export function updateWorkout(workout) {
+  const workouts = getWorkouts();
+  const idx = workouts.findIndex(w => w.id === workout.id);
+  if (idx >= 0) {
+    workouts[idx] = workout;
+    write(KEYS.workouts, workouts);
+    syncAfterWrite();
+  }
+}
+
 export function getLastWorkoutForTemplate(templateId) {
   const workouts = getWorkouts()
     .filter(w => w.templateId === templateId)

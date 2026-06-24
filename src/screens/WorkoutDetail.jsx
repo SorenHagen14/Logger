@@ -1,8 +1,11 @@
+import { useContext } from 'react';
+import { AppContext } from '../App.jsx';
 import { getExercises } from '../data/db.js';
 import { formatDate, formatDuration } from '../utils/helpers.js';
 import { shareWorkout } from '../utils/share.js';
 
 export default function WorkoutDetail({ workout, onBack }) {
+  const { setEditingWorkout } = useContext(AppContext);
   const allExercises = getExercises();
   const getExName = (id, name) => name || allExercises.find(e => e.id === id)?.name || id;
 
@@ -26,16 +29,28 @@ export default function WorkoutDetail({ workout, onBack }) {
         }}>
           &#x2190;
         </button>
-        <button onClick={() => shareWorkout(workout)} style={{
-          color: 'var(--text-muted)',
-          fontSize: 13,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          padding: '8px 12px',
-        }}>
-          Share
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => setEditingWorkout(workout)} style={{
+            color: 'var(--text-muted)',
+            fontSize: 13,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            padding: '8px 12px',
+          }}>
+            Edit
+          </button>
+          <button onClick={() => shareWorkout(workout)} style={{
+            color: 'var(--text-muted)',
+            fontSize: 13,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            padding: '8px 12px',
+          }}>
+            Share
+          </button>
+        </div>
       </div>
 
       <h2 style={{

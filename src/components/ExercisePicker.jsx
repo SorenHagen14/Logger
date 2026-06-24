@@ -34,13 +34,30 @@ export default function ExercisePicker({ onSelect, onClose, excludeIds = [] }) {
   }, [filtered]);
 
   return createPortal(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        alignItems: 'stretch',
+      }}
+    >
+      <div
+        className="modal-content"
+        onClick={e => e.stopPropagation()}
+        style={{
+          maxHeight: 'none',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          paddingBottom: 'var(--safe-bottom)',
+        }}
+      >
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: 16,
+          flexShrink: 0,
         }}>
           <div>
             <h2 style={{
@@ -88,7 +105,7 @@ export default function ExercisePicker({ onSelect, onClose, excludeIds = [] }) {
           value={search}
           onChange={e => setSearch(e.target.value)}
           autoFocus
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: 12, flexShrink: 0 }}
         />
 
         <div style={{
@@ -99,6 +116,7 @@ export default function ExercisePicker({ onSelect, onClose, excludeIds = [] }) {
           WebkitOverflowScrolling: 'touch',
           msOverflowStyle: 'none',
           scrollbarWidth: 'none',
+          flexShrink: 0,
         }}>
           <button
             onClick={() => setFilter(null)}
@@ -137,7 +155,7 @@ export default function ExercisePicker({ onSelect, onClose, excludeIds = [] }) {
           ))}
         </div>
 
-        <div style={{ maxHeight: '50dvh', overflowY: 'auto' }}>
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
           {Object.keys(grouped).length === 0 && (
             <div style={{
               padding: '32px 0',
