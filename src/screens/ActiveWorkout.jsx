@@ -132,7 +132,14 @@ export default function ActiveWorkout() {
     const nowComplete = !set.completed;
     const timerKey = `${exerciseIdx}-${setIdx}`;
 
-    updateSet(exerciseIdx, setIdx, { completed: nowComplete });
+    const updates = { completed: nowComplete };
+    if (nowComplete) {
+      const prevData = getPreviousDataForExercise(ex.exerciseId);
+      const prev = prevData?.[setIdx];
+      if (set.weight === '' && prev?.weight != null) updates.weight = prev.weight;
+      if (set.reps === '' && prev?.reps != null) updates.reps = prev.reps;
+    }
+    updateSet(exerciseIdx, setIdx, updates);
 
     if (nowComplete && set.setType !== 'drop') {
       const isSupersetMember = workout.supersets?.some(ss => ss.exerciseIds.includes(ex.exerciseId));
