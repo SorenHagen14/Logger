@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { getExercises, getTemplates, saveTemplate, updateWorkout } from '../data/db.js';
+import { getExercises, getTemplates, getSettings, saveTemplate, updateWorkout } from '../data/db.js';
 import { generateId } from '../utils/helpers.js';
+import ExercisePicker from '../components/ExercisePicker.jsx';
 
 export default function WorkoutEditor({ workout, onSave, onCancel }) {
   const allExercises = getExercises();
+  const settings = getSettings();
   const getExName = (id, name) => name || allExercises.find(e => e.id === id)?.name || id;
 
   const [exercises, setExercises] = useState(() =>
@@ -22,6 +24,7 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [savedWorkout, setSavedWorkout] = useState(null);
+  const [showPicker, setShowPicker] = useState(false);
   const inputRefs = useRef({});
   const nameInputRef = useRef(null);
 
@@ -33,6 +36,61 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
       next[exIdx] = ex;
       return next;
     });
+  };
+
+  const addSet = (exIdx) => {
+    setExercises(prev => {
+      const next = [...prev];
+      const ex = { ...next[exIdx], sets: [...next[exIdx].sets] };
+      ex.sets.push({
+        setNumber: ex.sets.length + 1,
+        setType: 'normal',
+        weight: '',
+        reps: '',
+        rpe: null,
+        completed: true,
+        weightUnit: ex.weightUnit || settings.defaultWeightUnit,
+      });
+      next[exIdx] = ex;
+      return next;
+    });
+  };
+
+  const deleteSet = (exIdx, setIdx) => {
+    setExercises(prev => {
+      const next = [...prev];
+      const ex = { ...next[exIdx], sets: [...next[exIdx].sets] };
+      if (ex.sets.length <= 1) {
+        return prev.filter((_, i) => i !== exIdx);
+      }
+      ex.sets = ex.sets.filter((_, i) => i !== setIdx).map((s, i) => ({ ...s, setNumber: i + 1 }));
+      next[exIdx] = ex;
+      return next;
+    });
+  };
+
+  const addExercise = (ex) => {
+    setExercises(prev => [...prev, {
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      weightUnit: settings.defaultWeightUnit,
+      restTimerSeconds: null,
+      barType: null,
+      notes: [],
+      sets: Array.from({ length: 3 }, (_, i) => ({
+        setNumber: i + 1,
+        setType: 'normal',
+        weight: '',
+        reps: '',
+        rpe: null,
+        completed: true,
+        weightUnit: settings.defaultWeightUnit,
+      })),
+    }]);
+  };
+
+  const removeExercise = (exIdx) => {
+    setExercises(prev => prev.filter((_, i) => i !== exIdx));
   };
 
   const buildUpdatedWorkout = () => ({
@@ -161,43 +219,58 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
 
       <div style={{ borderTop: '1px solid var(--border)' }}>
         {exercises.map((ex, exIdx) => {
-          const completedSets = ex.sets.filter(s => s.completed);
-          if (completedSets.length === 0) return null;
           return (
             <div key={exIdx} style={{
               borderBottom: '1px solid var(--border)',
               padding: '16px 0',
             }}>
               <div style={{
-                fontSize: 13,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 marginBottom: 10,
               }}>
-                {getExName(ex.exerciseId, ex.exerciseName)}
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}>
+                  {getExName(ex.exerciseId, ex.exerciseName)}
+                </div>
+                <button
+                  onClick={() => removeExercise(exIdx)}
+                  style={{
+                    padding: '4px 8px',
+                    color: 'var(--text-muted)',
+                    fontSize: 16,
+                    lineHeight: 1,
+                  }}
+                >
+                  &#x2715;
+                </button>
               </div>
 
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '32px 1fr 1fr',
+                gridTemplateColumns: '32px 1fr 1fr 28px',
                 gap: 8,
                 padding: '4px 0',
               }}>
                 <span className="label" style={{ margin: 0 }}>Set</span>
                 <span className="label" style={{ margin: 0 }}>Weight</span>
                 <span className="label" style={{ margin: 0 }}>Reps</span>
+                <span />
               </div>
 
               {ex.sets.map((s, setIdx) => {
-                if (!s.completed) return null;
                 const setLabel = typeLabels[s.setType] || (s.setNumber || setIdx + 1);
                 const weightKey = `${exIdx}-${setIdx}-weight`;
                 const repsKey = `${exIdx}-${setIdx}-reps`;
                 return (
                   <div key={setIdx} style={{
                     display: 'grid',
-                    gridTemplateColumns: '32px 1fr 1fr',
+                    gridTemplateColumns: '32px 1fr 1fr 28px',
                     gap: 8,
                     padding: '6px 0',
                     fontSize: 14,
@@ -254,13 +327,63 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
                         fontVariantNumeric: 'tabular-nums',
                       }}
                     />
+                    <button
+                      onClick={() => deleteSet(exIdx, setIdx)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-muted)',
+                        fontSize: 13,
+                        lineHeight: 1,
+                      }}
+                    >
+                      &#x2212;
+                    </button>
                   </div>
                 );
               })}
+
+              <button
+                onClick={() => addSet(exIdx)}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'var(--text-secondary)',
+                  padding: '12px 0 4px',
+                  width: '100%',
+                  textAlign: 'center',
+                }}
+              >
+                + Add Set
+              </button>
             </div>
           );
         })}
       </div>
+
+      <button
+        onClick={() => setShowPicker(true)}
+        className="btn"
+        style={{
+          width: '100%',
+          background: 'transparent',
+          border: '1px solid var(--border)',
+          color: 'var(--text-secondary)',
+          marginTop: 16,
+        }}
+      >
+        + Add Exercise
+      </button>
+
+      {showPicker && (
+        <ExercisePicker
+          onSelect={(ex) => { addExercise(ex); setShowPicker(false); }}
+          onClose={() => setShowPicker(false)}
+        />
+      )}
 
       {showTemplateDialog && createPortal(
         <div className="confirm-overlay" onClick={handleSkipTemplate}>
