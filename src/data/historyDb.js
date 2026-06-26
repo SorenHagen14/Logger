@@ -93,6 +93,65 @@ export async function getRecordsForExercise(exerciseId) {
   return { maxWeight, maxReps, sessions: history.length };
 }
 
+export async function recoverLostWorkouts(getWorkouts, saveWorkoutFn) {
+  const db = await openDb();
+  const tx = db.transaction(STORE_NAME, 'readonly');
+  const store = tx.objectStore(STORE_NAME);
+  const allEntries = await new Promise((resolve, reject) => {
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+
+  if (allEntries.length === 0) return 0;
+
+  const byWorkout = new Map();
+  for (const entry of allEntries) {
+    if (!entry.workoutId) continue;
+    if (!byWorkout.has(entry.workoutId)) byWorkout.set(entry.workoutId, []);
+    byWorkout.get(entry.workoutId).push(entry);
+  }
+
+  const existingIds = new Set(getWorkouts().map(w => w.id));
+  let recovered = 0;
+
+  for (const [workoutId, entries] of byWorkout) {
+    if (existingIds.has(workoutId)) continue;
+
+    const firstEntry = entries[0];
+    const workout = {
+      id: workoutId,
+      templateId: null,
+      templateName: firstEntry.templateName || 'Recovered Workout',
+      startedAt: firstEntry.date,
+      completedAt: firstEntry.date,
+      supersets: [],
+      exercises: entries.map(entry => ({
+        exerciseId: entry.exerciseId,
+        exerciseName: entry.exerciseName || '',
+        weightUnit: entry.sets[0]?.weightUnit || 'lbs',
+        restTimerSeconds: null,
+        barType: null,
+        notes: [],
+        sets: entry.sets.map(s => ({
+          setNumber: s.setNumber,
+          setType: s.setType || 'normal',
+          weight: s.weight,
+          reps: s.reps,
+          rpe: null,
+          completed: true,
+          weightUnit: s.weightUnit || 'lbs',
+        })),
+      })),
+    };
+
+    saveWorkoutFn(workout);
+    recovered++;
+  }
+
+  return recovered;
+}
+
 export async function backfillIfNeeded(getWorkouts) {
   const key = `wl_history_backfilled_${currentUserId || 'local'}`;
   if (localStorage.getItem(key)) return;

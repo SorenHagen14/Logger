@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
-import { getSettings, saveSettings } from '../data/db.js';
+import { getSettings, saveSettings, getWorkouts, saveWorkout } from '../data/db.js';
+import { recoverLostWorkouts } from '../data/historyDb.js';
 import { AppContext } from '../App.jsx';
 import StrongImport from '../components/StrongImport.jsx';
 import AuthModal from '../components/AuthModal.jsx';
@@ -11,6 +12,8 @@ export default function SettingsScreen() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showInstructions, setShowInstructions] = useState(null);
+  const [recovering, setRecovering] = useState(false);
+  const [recoverResult, setRecoverResult] = useState(null);
   const ctx = useContext(AppContext);
   const { user, syncing } = ctx;
 
@@ -239,10 +242,55 @@ export default function SettingsScreen() {
             color: 'var(--text)',
             border: '1px solid var(--border)',
             textAlign: 'center',
+            marginBottom: 8,
           }}
         >
           Import Training Data
         </button>
+        <button
+          onClick={async () => {
+            setRecovering(true);
+            setRecoverResult(null);
+            try {
+              const count = await recoverLostWorkouts(getWorkouts, saveWorkout);
+              setRecoverResult(count > 0
+                ? `Recovered ${count} workout${count !== 1 ? 's' : ''}`
+                : 'No lost workouts found');
+              if (count > 0) ctx.forceUpdate();
+            } catch {
+              setRecoverResult('Recovery failed');
+            }
+            setRecovering(false);
+          }}
+          disabled={recovering}
+          style={{
+            width: '100%',
+            padding: '14px',
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            background: 'transparent',
+            color: 'var(--yellow)',
+            border: '1px solid var(--border)',
+            textAlign: 'center',
+            opacity: recovering ? 0.5 : 1,
+          }}
+        >
+          {recovering ? 'Recovering...' : 'Recover Lost Workouts'}
+        </button>
+        {recoverResult && (
+          <div style={{
+            fontSize: 12,
+            color: recoverResult.startsWith('Recovered') ? 'var(--green)' : 'var(--text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            textAlign: 'center',
+            marginTop: 8,
+          }}>
+            {recoverResult}
+          </div>
+        )}
       </div>
 
       {/* Feedback */}
