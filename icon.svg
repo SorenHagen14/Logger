@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0F0F0F"/>
+  <text
+    x="230"
+    y="400"
+    font-family="'Playfair Display', Georgia, serif"
+    font-style="italic"
+    font-weight="700"
+    font-size="420"
+    fill="#FF574D"
+  >L</text>
+</svg>
