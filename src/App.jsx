@@ -54,14 +54,14 @@ export default function App() {
       backfillIfNeeded(getWorkouts);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const u = session?.user ?? null;
       setUser(u);
       setSyncUser(u?.id ?? null);
       setHistoryUser(u?.id ?? null);
       backfillIfNeeded(getWorkouts);
 
-      if (u) {
+      if (u && event === 'SIGNED_IN') {
         setSyncing(true);
         const hadCloudData = await downloadFromCloud();
         if (!hadCloudData) await uploadToCloud(u.id);
@@ -170,17 +170,18 @@ export default function App() {
     saveActiveWorkout(workout);
   }, []);
 
-  const finishWorkout = useCallback(() => {
-    if (!activeWorkout) return;
+  const finishWorkout = useCallback((workoutOverride) => {
+    const w = workoutOverride || activeWorkout;
+    if (!w) return;
     const now = new Date().toISOString();
-    const currentOrder = activeWorkout.exercises.map(e => e.exerciseId);
-    const orderChanged = JSON.stringify(currentOrder) !== JSON.stringify(activeWorkout.originalOrder);
+    const currentOrder = w.exercises.map(e => e.exerciseId);
+    const orderChanged = JSON.stringify(currentOrder) !== JSON.stringify(w.originalOrder);
 
     const completed = {
-      ...activeWorkout,
+      ...w,
       completedAt: now,
       orderChanged,
-      exercises: activeWorkout.exercises.map(ex => ({
+      exercises: w.exercises.map(ex => ({
         ...ex,
         sets: ex.sets.map(s => ({
           ...s,
@@ -195,7 +196,7 @@ export default function App() {
     addWorkoutToHistory(completed);
 
     const templates = getTemplates();
-    const template = templates.find(t => t.id === activeWorkout.templateId);
+    const template = templates.find(t => t.id === w.templateId);
     if (template) {
       template.lastCompletedAt = now;
       saveTemplate(template);

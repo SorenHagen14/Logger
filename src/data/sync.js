@@ -36,6 +36,15 @@ export async function uploadToCloud(userId) {
   return !error;
 }
 
+function mergeById(local, cloud) {
+  const map = new Map();
+  for (const item of local) map.set(item.id, item);
+  for (const item of cloud) {
+    if (!map.has(item.id)) map.set(item.id, item);
+  }
+  return [...map.values()];
+}
+
 // Returns true if cloud had data (and it was written to localStorage)
 export async function downloadFromCloud() {
   const { data, error } = await supabase
@@ -52,9 +61,18 @@ export async function downloadFromCloud() {
 
   if (!hasData) return false;
 
-  if (data.templates?.length) localStorage.setItem(KEYS.templates, JSON.stringify(data.templates));
-  if (data.workouts?.length) localStorage.setItem(KEYS.workouts, JSON.stringify(data.workouts));
-  if (data.custom_exercises?.length) localStorage.setItem(KEYS.exercises, JSON.stringify(data.custom_exercises));
+  if (data.templates?.length) {
+    const local = readLocal(KEYS.templates) || [];
+    localStorage.setItem(KEYS.templates, JSON.stringify(mergeById(local, data.templates)));
+  }
+  if (data.workouts?.length) {
+    const local = readLocal(KEYS.workouts) || [];
+    localStorage.setItem(KEYS.workouts, JSON.stringify(mergeById(local, data.workouts)));
+  }
+  if (data.custom_exercises?.length) {
+    const local = readLocal(KEYS.exercises) || [];
+    localStorage.setItem(KEYS.exercises, JSON.stringify(mergeById(local, data.custom_exercises)));
+  }
   if (data.settings && Object.keys(data.settings).length) {
     localStorage.setItem(KEYS.settings, JSON.stringify(data.settings));
   }
