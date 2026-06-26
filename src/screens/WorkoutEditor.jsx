@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
-import { getExercises, updateWorkout } from '../data/db.js';
+import { createPortal } from 'react-dom';
+import { getExercises, getTemplates, saveTemplate, updateWorkout } from '../data/db.js';
+import { generateId } from '../utils/helpers.js';
 
 export default function WorkoutEditor({ workout, onSave, onCancel }) {
   const allExercises = getExercises();
@@ -17,7 +19,11 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
   );
 
   const [activeInput, setActiveInput] = useState(null);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [savedWorkout, setSavedWorkout] = useState(null);
   const inputRefs = useRef({});
+  const nameInputRef = useRef(null);
 
   const handleSetChange = (exIdx, setIdx, field, value) => {
     setExercises(prev => {
@@ -29,20 +35,67 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
     });
   };
 
-  const handleSave = () => {
-    const updated = {
-      ...workout,
-      exercises: exercises.map(ex => ({
-        ...ex,
-        sets: ex.sets.map(s => ({
-          ...s,
-          weight: Number(s.weight) || 0,
-          reps: Number(s.reps) || 0,
-        })),
+  const buildUpdatedWorkout = () => ({
+    ...workout,
+    exercises: exercises.map(ex => ({
+      ...ex,
+      sets: ex.sets.map(s => ({
+        ...s,
+        weight: Number(s.weight) || 0,
+        reps: Number(s.reps) || 0,
       })),
-    };
+    })),
+  });
+
+  const workoutToTemplateExercises = (w) =>
+    w.exercises.map(ex => ({
+      exerciseId: ex.exerciseId,
+      restTimerSeconds: ex.restTimerSeconds ?? null,
+      weightUnit: ex.weightUnit ?? null,
+      barType: ex.barType ?? null,
+      sets: ex.sets.filter(s => s.completed).map(s => ({ setType: s.setType || 'normal' })),
+    })).filter(ex => ex.sets.length > 0);
+
+  const originalTemplate = getTemplates().find(t => t.id === workout.templateId);
+
+  const handleSave = () => {
+    const updated = buildUpdatedWorkout();
     updateWorkout(updated);
-    onSave(updated);
+    setSavedWorkout(updated);
+    setNewTemplateName((workout.templateName || 'Workout') + ' 2');
+    setShowTemplateDialog(true);
+  };
+
+  const handleSkipTemplate = () => {
+    setShowTemplateDialog(false);
+    onSave(savedWorkout);
+  };
+
+  const handleUpdateTemplate = () => {
+    if (originalTemplate) {
+      const updated = {
+        ...originalTemplate,
+        exercises: workoutToTemplateExercises(savedWorkout),
+      };
+      saveTemplate(updated);
+    }
+    setShowTemplateDialog(false);
+    onSave(savedWorkout);
+  };
+
+  const handleSaveNewTemplate = () => {
+    const trimmed = newTemplateName.trim();
+    if (!trimmed) return;
+    const tmpl = {
+      id: generateId(),
+      name: trimmed,
+      exercises: workoutToTemplateExercises(savedWorkout),
+      supersets: savedWorkout.supersets || [],
+      lastCompletedAt: null,
+    };
+    saveTemplate(tmpl);
+    setShowTemplateDialog(false);
+    onSave(savedWorkout);
   };
 
   const typeColors = {
@@ -208,6 +261,120 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
           );
         })}
       </div>
+
+      {showTemplateDialog && createPortal(
+        <div className="confirm-overlay" onClick={handleSkipTemplate}>
+          <div className="confirm-content" onClick={e => e.stopPropagation()}>
+            <h3 style={{
+              fontSize: 16,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              marginBottom: 8,
+            }}>
+              Update Template?
+            </h3>
+            <p style={{
+              fontSize: 14,
+              color: 'var(--text-secondary)',
+              marginBottom: 20,
+              lineHeight: 1.5,
+            }}>
+              Save this workout's exercises as a template for future use.
+            </p>
+
+            {originalTemplate && (
+              <button
+                onClick={handleUpdateTemplate}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  textAlign: 'left',
+                  marginBottom: 8,
+                }}
+              >
+                Update "{originalTemplate.name}"
+              </button>
+            )}
+
+            <div style={{
+              width: '100%',
+              padding: '14px 16px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              marginBottom: 16,
+            }}>
+              <div style={{
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'var(--text-secondary)',
+                marginBottom: 8,
+              }}>
+                Save as New Template
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={newTemplateName}
+                  onChange={e => setNewTemplateName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveNewTemplate(); }}
+                  placeholder="Template name"
+                  style={{
+                    flex: 1,
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    padding: '8px 12px',
+                    fontSize: 14,
+                  }}
+                />
+                <button
+                  onClick={handleSaveNewTemplate}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--accent)',
+                    color: 'var(--accent-text)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSkipTemplate}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--text-muted)',
+                fontSize: 13,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Skip
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
