@@ -6,6 +6,7 @@ import ExercisePicker from '../components/ExercisePicker.jsx';
 import RestTimer from '../components/RestTimer.jsx';
 import UndoToast from '../components/UndoToast.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import IncompleteWorkoutDialog from '../components/IncompleteWorkoutDialog.jsx';
 import ExerciseMenu from '../components/ExerciseMenu.jsx';
 import NumericInputModal from '../components/NumericInputModal.jsx';
 import ExerciseHistory from '../components/ExerciseHistory.jsx';
@@ -13,6 +14,7 @@ import ExerciseHistory from '../components/ExerciseHistory.jsx';
 export default function ActiveWorkout() {
   const { activeWorkout, setActiveWorkout, finishWorkout, cancelWorkout } = useContext(AppContext);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showIncompleteDialog, setShowIncompleteDialog] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [activeTimers, setActiveTimers] = useState({});
@@ -36,6 +38,12 @@ export default function ActiveWorkout() {
   useEffect(() => {
     if (workout) saveActiveWorkout(workout);
   }, [workout]);
+
+  useEffect(() => {
+    if (workout && workout.exercises.length === 0) {
+      setShowExercisePicker(true);
+    }
+  }, []);
 
   const getExName = (id) => allExercises.find(e => e.id === id)?.name || 'Unknown';
 
@@ -341,7 +349,11 @@ export default function ActiveWorkout() {
           {workout.templateName || 'Workout'}
         </div>
         <button
-          onClick={() => setShowFinishConfirm(true)}
+          onClick={() => {
+            const hasIncomplete = workout.exercises.some(ex => ex.sets.some(s => !s.completed));
+            if (hasIncomplete) setShowIncompleteDialog(true);
+            else setShowFinishConfirm(true);
+          }}
           style={{
             padding: '8px 20px',
             background: 'var(--accent)',
@@ -634,6 +646,49 @@ export default function ActiveWorkout() {
           onCancel={() => setShowFinishConfirm(false)}
         />
       )}
+
+      {showIncompleteDialog && (() => {
+        const incompleteCount = workout.exercises.reduce(
+          (sum, ex) => sum + ex.sets.filter(s => !s.completed).length, 0
+        );
+        return (
+          <IncompleteWorkoutDialog
+            incompleteCount={incompleteCount}
+            onFinishAsIs={() => {
+              setShowIncompleteDialog(false);
+              const modified = {
+                ...workout,
+                exercises: workout.exercises
+                  .map(ex => ({ ...ex, sets: ex.sets.filter(s => s.completed) }))
+                  .filter(ex => ex.sets.length > 0),
+              };
+              finishWorkout(modified);
+            }}
+            onAutoFill={() => {
+              setShowIncompleteDialog(false);
+              const modified = {
+                ...workout,
+                exercises: workout.exercises.map(ex => ({
+                  ...ex,
+                  sets: ex.sets.map((s, i) => {
+                    if (s.completed) return s;
+                    const prevData = getPreviousDataForExercise(ex.exerciseId);
+                    const prev = prevData?.[i];
+                    return {
+                      ...s,
+                      weight: s.weight !== '' ? s.weight : (prev?.weight ?? ''),
+                      reps: s.reps !== '' ? s.reps : (prev?.reps ?? ''),
+                      completed: true,
+                    };
+                  }),
+                })),
+              };
+              finishWorkout(modified);
+            }}
+            onGoBack={() => setShowIncompleteDialog(false)}
+          />
+        );
+      })()}
 
       {showCancelConfirm && (
         <ConfirmDialog

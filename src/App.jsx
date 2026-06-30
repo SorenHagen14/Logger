@@ -130,6 +130,20 @@ export default function App() {
     }
   }, []);
 
+  const startQuickWorkout = useCallback(() => {
+    const workout = {
+      id: generateId(),
+      templateId: null,
+      templateName: 'Quick Workout',
+      startedAt: new Date().toISOString(),
+      supersets: [],
+      exercises: [],
+      originalOrder: [],
+    };
+    setActiveWorkout(workout);
+    saveActiveWorkout(workout);
+  }, []);
+
   const startWorkout = useCallback((template) => {
     const settings = getSettings();
     const workout = {
@@ -218,6 +232,7 @@ export default function App() {
     activeWorkout,
     setActiveWorkout,
     startWorkout,
+    startQuickWorkout,
     finishWorkout,
     cancelWorkout,
     editingTemplate,

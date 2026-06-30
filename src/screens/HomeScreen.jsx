@@ -7,7 +7,8 @@ import { shareTemplate, shareAllTemplates } from '../utils/share.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 export default function HomeScreen() {
-  const { startWorkout, setEditingTemplate, setViewingWorkout, setEditingWorkout, forceUpdate } = useContext(AppContext);
+  const { startWorkout, startQuickWorkout, setEditingTemplate, setViewingWorkout, setEditingWorkout, forceUpdate } = useContext(AppContext);
+  const [showNewMenu, setShowNewMenu] = useState(false);
   const [confirmStart, setConfirmStart] = useState(null);
   const [menuTemplate, setMenuTemplate] = useState(null);
   const [renameTemplate, setRenameTemplate] = useState(null);
@@ -132,7 +133,7 @@ export default function HomeScreen() {
               </button>
             )}
             <button
-              onClick={() => setEditingTemplate({ id: generateId(), name: '', exercises: [], supersets: [] })}
+              onClick={() => setShowNewMenu(true)}
               style={{
                 width: 44,
                 height: 44,
@@ -553,6 +554,56 @@ export default function HomeScreen() {
           onConfirm={handleDelete}
           onCancel={() => setDeleteConfirm(null)}
         />
+      )}
+
+      {showNewMenu && createPortal(
+        <div className="modal-overlay" onClick={() => setShowNewMenu(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}>
+              <h3 style={{
+                fontSize: 14,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}>
+                New Workout
+              </h3>
+              <button onClick={() => setShowNewMenu(false)} style={{
+                color: 'var(--text-muted)',
+                fontSize: 28,
+                lineHeight: 1,
+                padding: 4,
+              }}>
+                &times;
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowNewMenu(false);
+                setEditingTemplate({ id: generateId(), name: '', exercises: [], supersets: [] });
+              }}
+              style={MENU_ITEM_STYLE}
+            >
+              <span style={{ fontSize: 16 }}>&#x2B;</span> New Template
+            </button>
+            <button
+              onClick={() => {
+                setShowNewMenu(false);
+                startQuickWorkout();
+              }}
+              style={{ ...MENU_ITEM_STYLE, borderBottom: 'none' }}
+            >
+              <span style={{ fontSize: 16 }}>&#x26A1;</span> Quick Workout
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
